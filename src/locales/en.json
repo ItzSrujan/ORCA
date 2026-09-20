@@ -1,0 +1,132 @@
+{
+  "app": {
+    "title": "ORCA",
+    "subtitle": "Ocean Risk & Coordinated Advisory",
+    "tagline": "Marine Decision Support"
+  },
+  "nav": {
+    "home": "Home",
+    "map": "Map",
+    "ask": "Ask ORCA",
+    "selectLanguage": "Language",
+    "changeLocation": "Change Location",
+    "refresh": "Refresh"
+  },
+  "location": {
+    "currentTitle": "YOUR CURRENT LOCATION",
+    "lastUpdated": "Last updated",
+    "justNow": "Just now",
+    "minutesAgo": "{{count}}m ago",
+    "detecting": "Detecting your location...",
+    "permissionPrompt": "Location access is needed to analyze conditions near you.",
+    "allowAccess": "Enable Location",
+    "searchLocation": "Search Location",
+    "selectPort": "Select Coastal Port",
+    "searchPlaceholder": "Search city, harbor or coordinates...",
+    "popularPorts": "Major Fishing Harbors",
+    "distanceAway": "{{distance}} km away",
+    "close": "Close"
+  },
+  "risk": {
+    "safe": "SAFE TO PROCEED",
+    "caution": "PROCEED WITH CAUTION",
+    "highRisk": "HIGH RISK",
+    "insufficientData": "INSUFFICIENT DATA",
+    "safeDesc": "Marine conditions are calm and within safe operating parameters.",
+    "cautionDesc": "Moderate sea or wind conditions detected. Exercise heightened vigilance.",
+    "highRiskDesc": "Adverse weather, high swell or strong currents detected. Sea transit not advised.",
+    "insufficientDesc": "Key sensor or telemetry data is missing. Verify conditions locally before departure."
+  },
+  "recommendation": {
+    "title": "RECOMMENDATION",
+    "reasonTitle": "Reason",
+    "disclaimer": "Safety assessment based on available marine data. Always verify local sea conditions and port warnings before sailing."
+  },
+  "conditions": {
+    "title": "CURRENT CONDITIONS",
+    "wind": "WIND",
+    "waves": "WAVES",
+    "current": "CURRENT",
+    "seaTemp": "SEA TEMPERATURE",
+    "tide": "TIDE",
+    "fishingAdvisory": "FISHING ADVISORY",
+    "tideRising": "Rising",
+    "tideFalling": "Falling",
+    "tideUnavailable": "Unavailable",
+    "advisoryAvailable": "Available",
+    "advisoryUnavailable": "Not Available",
+    "statusLight": "Light breeze",
+    "statusModerate": "Moderate",
+    "statusRough": "Rough seas",
+    "statusStrong": "Strong current",
+    "statusNormal": "Normal flow",
+    "statusWarm": "Warm waters"
+  },
+  "suggested": {
+    "title": "BETTER CONDITIONS NEARBY",
+    "badge": "LOWER RISK",
+    "viewComparison": "VIEW LOCATION COMPARISON",
+    "distance": "{{distance}} km from your current location",
+    "noBetterFound": "No significantly better nearby location was identified based on currently available data.",
+    "comparingLocations": "Comparing with nearby coastal zones..."
+  },
+  "comparison": {
+    "title": "Location Comparison",
+    "subtitle": "Review how conditions compare between your current harbor and the suggested alternative.",
+    "current": "CURRENT LOCATION",
+    "suggested": "SUGGESTED LOCATION",
+    "metric": "CONDITION",
+    "whyBetterTitle": "Why is the suggested location better?",
+    "close": "Close Comparison",
+    "overallRisk": "Overall Risk",
+    "recommendation": "Recommendation",
+    "moreFavourable": "MORE FAVOURABLE",
+    "caution": "CAUTION REQUIRED",
+    "highRisk": "AVOID TRANSIT"
+  },
+  "map": {
+    "title": "Marine Map",
+    "openFullMap": "OPEN FULL MAP",
+    "closeFullMap": "COLLAPSE MAP",
+    "currentLocation": "Current Location",
+    "suggestedLocation": "Suggested Location",
+    "advisoryZone": "Active Advisory Zone",
+    "cautionArea": "Caution / Swell Area"
+  },
+  "ask": {
+    "title": "ASK ORCA",
+    "placeholder": "Ask about fishing or sea conditions...",
+    "send": "Ask",
+    "thinking": "Consulting marine intelligence...",
+    "examplesTitle": "Common Questions:",
+    "example1": "Is it safe to go fishing today?",
+    "example2": "What will wave heights be this evening?",
+    "example3": "Are there any fishing advisories near here?",
+    "example4": "Suggest places to fish based on the map",
+    "responseTitle": "ORCA Marine Advice",
+    "evidenceTitle": "Evidence Checked"
+  },
+  "howAnalyzed": {
+    "title": "How ORCA analyzed this",
+    "stepWeather": "Weather conditions checked",
+    "stepMarine": "Marine conditions checked",
+    "stepTide": "Tide information checked",
+    "stepAdvisory": "Fishing advisory checked",
+    "stepRisk": "Risk assessment completed"
+  },
+  "provenance": {
+    "title": "DATA USED FOR THIS ASSESSMENT",
+    "weather": "Weather Data",
+    "marine": "Marine Conditions",
+    "tide": "Tide Data",
+    "fishingAdvisory": "Fishing Advisory",
+    "live": "LIVE DATA",
+    "fallback": "FALLBACK DATA",
+    "unavailable": "UNAVAILABLE DATA"
+  },
+  "errors": {
+    "fetchFailed": "Unable to fetch live marine data. Using cached/offline information.",
+    "geolocationDenied": "Location permission was denied. You can manually search any port.",
+    "offlineNotice": "Offline mode active. Showing latest known coastal data."
+  }
+}

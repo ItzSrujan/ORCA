@@ -1,0 +1,109 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+@import 'leaflet/dist/leaflet.css';
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ── Base ───────────────────────────────────────────────────── */
+
+@layer base {
+  *,
+  *::before,
+  *::after {
+    box-sizing: border-box;
+  }
+
+  html {
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
+  }
+
+  body {
+    @apply bg-surface-100 text-navy-900 font-sans text-sm leading-relaxed m-0;
+  }
+
+  h1, h2, h3, h4 {
+    @apply font-semibold tracking-tight text-navy-900;
+  }
+}
+
+/* ── Scrollbar ──────────────────────────────────────────────── */
+
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #c4c9d0;
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #9ca3af;
+}
+
+/* ── Leaflet Fix ────────────────────────────────────────────── */
+
+.leaflet-container {
+  font-family: inherit !important;
+  z-index: 0;
+  width: 100% !important;
+  height: 100% !important;
+  background-color: #e5e9ec !important;
+}
+
+.leaflet-tile-pane {
+  opacity: 1 !important;
+}
+
+.leaflet-tile {
+  visibility: inherit !important;
+}
+
+/* ── Custom Pins & Marker Fix ───────────────────────────────── */
+
+.orca-current-pin,
+.orca-live-pin,
+.orca-target-pin,
+.orca-suggested-pin {
+  background: transparent !important;
+  border: none !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+}
+
+@keyframes orca-radar-pulse {
+  0% {
+    transform: scale(0.6);
+    opacity: 0.9;
+  }
+  70% {
+    transform: scale(2.5);
+    opacity: 0;
+  }
+  100% {
+    transform: scale(2.8);
+    opacity: 0;
+  }
+}
+
+.orca-radar-wave {
+  animation: orca-radar-pulse 2s cubic-bezier(0.25, 1, 0.5, 1) infinite;
+}
+
+.leaflet-marker-pane {
+  z-index: 600 !important;
+}
+
+.leaflet-overlay-pane {
+  z-index: 400 !important;
+}
+

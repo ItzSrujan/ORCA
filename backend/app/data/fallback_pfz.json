@@ -1,0 +1,83 @@
+[
+  {
+    "zone": "Digha Offshore Zone",
+    "latitude": 21.5,
+    "longitude": 87.6,
+    "summary": "Active pelagic zone 15-20 nm offshore with thermal front aggregation.",
+    "issued_at": "2025-01-01T06:00:00Z",
+    "depth_range_m": "20-50",
+    "species_likely": ["Hilsa", "Pomfret", "Prawn"]
+  },
+  {
+    "zone": "Puri Coastal Zone",
+    "latitude": 19.8,
+    "longitude": 85.9,
+    "summary": "Coastal pelagic zone near Puri coast with favorable chlorophyll gradient.",
+    "issued_at": "2025-01-01T06:00:00Z",
+    "depth_range_m": "15-40",
+    "species_likely": ["Mackerel", "Sardine"]
+  },
+  {
+    "zone": "Visakhapatnam Offshore",
+    "latitude": 17.7,
+    "longitude": 83.4,
+    "summary": "Productive shelf-edge zone off Visakhapatnam suitable for pelagic catch.",
+    "issued_at": "2025-01-01T06:00:00Z",
+    "depth_range_m": "30-80",
+    "species_likely": ["Tuna", "Seer Fish"]
+  },
+  {
+    "zone": "Chennai Nearshore",
+    "latitude": 13.1,
+    "longitude": 80.4,
+    "summary": "Nearshore pelagic school area off Chennai coast with light swell.",
+    "issued_at": "2025-01-01T06:00:00Z",
+    "depth_range_m": "10-30",
+    "species_likely": ["Prawn", "Crab", "Sardine"]
+  },
+  {
+    "zone": "Mumbai Offshore Zone",
+    "latitude": 18.9,
+    "longitude": 72.6,
+    "summary": "Productive coastal zone 10-15 nm off Mumbai with active pelagic schools.",
+    "issued_at": "2025-01-01T06:00:00Z",
+    "depth_range_m": "20-45",
+    "species_likely": ["Pomfret", "Mackerel", "Bombay Duck"]
+  },
+  {
+    "zone": "Ratnagiri Offshore Sector",
+    "latitude": 17.0,
+    "longitude": 73.1,
+    "summary": "SST thermal boundary 12 nm off Mirkarwada with mackerel schools.",
+    "issued_at": "2025-01-01T06:00:00Z",
+    "depth_range_m": "25-50",
+    "species_likely": ["Mackerel", "Kingfish", "Squid"]
+  },
+  {
+    "zone": "Goa Coastal Zone",
+    "latitude": 15.4,
+    "longitude": 73.6,
+    "summary": "Chlorophyll front 8-12 nm offshore with active sardine aggregation.",
+    "issued_at": "2025-01-01T06:00:00Z",
+    "depth_range_m": "15-40",
+    "species_likely": ["Sardine", "Mackerel", "Seer Fish"]
+  },
+  {
+    "zone": "Veraval Coastal Waters",
+    "latitude": 20.8,
+    "longitude": 70.3,
+    "summary": "High chlorophyll concentration along Saurashtra shelf edge.",
+    "issued_at": "2025-01-01T06:00:00Z",
+    "depth_range_m": "30-65",
+    "species_likely": ["Croaker", "Ribbon Fish", "Pomfret"]
+  },
+  {
+    "zone": "Kochi Offshore Zone",
+    "latitude": 9.97,
+    "longitude": 76.2,
+    "summary": "Offshore upwelling zone near Kochi favorable for pelagic shoals.",
+    "issued_at": "2025-01-01T06:00:00Z",
+    "depth_range_m": "25-60",
+    "species_likely": ["Mackerel", "Oil Sardine", "Squid"]
+  }
+]
