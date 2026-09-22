@@ -925,11 +925,9 @@ def _intelligent_multi_agent_synthesizer(state: OrcaState, lang: str = "en") -> 
     marine = state.get("marine_data")
     tide = state.get("tide_data")
     pfz = state.get("pfz_data")
-    loc_name = state.get("location_name") or f"Coordinates ({state.get('input_latitude', 21.6):.2f}°N, {state.get('input_longitude', 87.5):.2f}°E)"
-
-    # Coordinates
     lat = float(state.get("latitude") or state.get("input_latitude") or 21.6266)
     lon = float(state.get("longitude") or state.get("input_longitude") or 87.5074)
+    loc_name = state.get("location_name") or f"Coordinates ({lat:.2f}°N, {lon:.2f}°E)"
 
     # Telemetry extraction
     wind_spd = round(weather.wind_speed_kmh, 1) if (weather and weather.wind_speed_kmh is not None) else 10.0
@@ -940,45 +938,39 @@ def _intelligent_multi_agent_synthesizer(state: OrcaState, lang: str = "en") -> 
     wave_ht = round(marine.wave_height_m, 1) if (marine and marine.wave_height_m is not None) else 0.8
     wave_period = round(marine.wave_period_s, 1) if (marine and marine.wave_period_s is not None) else 8.0
     sst = round(marine.sea_surface_temperature_c, 1) if (marine and marine.sea_surface_temperature_c is not None) else temp_c
-    swell_ht = round(marine.swell_height_m, 1) if (marine and getattr(marine, "swell_height_m", None) is not None) else 0.0
+    swell_ht = round(marine.swell_height_m, 1) if (marine and marine.swell_height_m is not None) else None
     current_spd = round(marine.current_velocity_ms, 2) if (marine and getattr(marine, "current_velocity_ms", None) is not None) else 0.4
 
-    # Tide extraction
-    tide_status = tide.tide_status if (tide and tide.tide_status) else "Normal"
-    tide_level = f"{tide.current_level_m:.1f}m" if (tide and tide.current_level_m is not None) else ""
-    tide_high = tide.next_high if (tide and tide.next_high) else ""
-    tide_low = tide.next_low if (tide and tide.next_low) else ""
+    # Spatial and alternative ports extraction
+    spatial = state.get("spatial_context") or get_spatial_map_context(lat, lon, location_name=loc_name)
+    alt = spatial.get("recommended_alternative_port") or {}
+    alt_name = alt.get("name")
+    alt_dist = alt.get("distance_km", 999)
+    alt_adv = alt.get("advantage", "calmer sheltered waters")
 
-    # Exclude location detection
-    is_exclude_q = bool(state.get("is_exclude_query") or state.get("exclude_location")) or any(
-        w in query for w in ["other than", "except", "besides", "leaving", "excluding", "chhodkar", "alawa", "sobgala", "sodun"]
-    )
-    exclude_name = state.get("exclude_location") or ""
-    if not exclude_name and is_exclude_q:
-        exclude_name = loc_name
+    is_exclude_q = bool(state.get("is_exclude_query") or state.get("exclude_location"))
+    exclude_name = state.get("exclude_location", "")
+    alt_ports = spatial.get("alternative_ports") or find_alternative_ports(lat, lon, exclude_name=exclude_name, limit=4)
 
-    # State filter for ports
+    # Tide info
+    tide_status = (tide.tide_status if (tide and tide.tide_status) else "Unavailable").title()
+    tide_high = tide.next_high if tide else None
+    tide_low = tide.next_low if tide else None
+    tide_level = f"{tide.current_level_m:+.2f}m" if (tide and tide.current_level_m is not None) else ""
+
+    # PFZ info
+    has_pfz = bool(pfz and pfz.available and pfz.zone)
+    pfz_zone = pfz.zone if has_pfz else "Offshore Pelagic Zone"
+    pfz_map = spatial.get("pfz_advisory_area") or {}
+    pfz_dist_nm = pfz_map.get("distance_nm", 8)
+    pfz_bearing = pfz_map.get("bearing", "South-West")
+
+    # State filter for port listings
     target_state = ""
     for st in ["maharashtra", "gujarat", "goa", "karnataka", "kerala", "tamil nadu", "andhra pradesh", "odisha", "west bengal"]:
         if st in query:
             target_state = st
             break
-
-    # Spatial context & Alternative ports
-    pfz_zone_name = pfz.zone if (pfz and pfz.available) else None
-    spatial = state.get("spatial_context") or get_spatial_map_context(lat, lon, location_name=loc_name, pfz_zone=pfz_zone_name)
-    alt = (spatial.get("suggested_alternative") if spatial else {}) or {}
-    alt_name = alt.get("name", "")
-    alt_dist = round(alt.get("distance_km", 12)) if alt.get("distance_km") is not None else 12
-    alt_adv = alt.get("advantage", "Protected waters with lower wave surge")
-    alt_ports = (spatial.get("alternative_ports") if spatial else None) or find_alternative_ports(lat, lon, exclude_name=exclude_name, limit=4)
-
-    # PFZ details
-    pfz_area = spatial.get("pfz_advisory_area") if spatial else None
-    has_pfz = bool(pfz and pfz.available and pfz.zone) or bool(pfz_area)
-    pfz_zone = (pfz.zone if (pfz and pfz.zone) else (pfz_area.get("zone_name") if pfz_area else "Offshore Thermal Front Sector"))
-    pfz_dist_nm = pfz_area.get("distance_nm", 8) if pfz_area else 8
-    pfz_bearing = pfz_area.get("bearing", "South-East") if pfz_area else "South-East"
 
     # ── Enhanced Dynamic Query Intent Detection ─────────────────
     # 0. List / directory of fishing ports or harbors

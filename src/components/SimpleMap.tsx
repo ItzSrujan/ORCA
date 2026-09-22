@@ -1,6 +1,6 @@
-import React, { useEffect, useRef, useState, useCallback } from 'react';
+import React, { useEffect, useRef, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Maximize2, Minimize2, MapPin, Navigation, Loader2 } from 'lucide-react';
+import { MapPin, Navigation, Loader2 } from 'lucide-react';
 import L from 'leaflet';
 import type { LocationAssessment, SuggestedLocation } from '../types';
 
@@ -26,7 +26,6 @@ export const SimpleMap: React.FC<SimpleMapProps> = ({
   const mapInstanceRef = useRef<L.Map | null>(null);
   const layerGroupRef = useRef<L.LayerGroup | null>(null);
   const onSelectLocationRef = useRef(onSelectLocation);
-  const [isFullMap, setIsFullMap] = useState<boolean>(false);
 
   // Keep ref updated to avoid stale closures in Leaflet events
   useEffect(() => {
@@ -256,24 +255,6 @@ export const SimpleMap: React.FC<SimpleMapProps> = ({
     }
   }, [renderMarkers]);
 
-  // 3. Handle Expand / Collapse Size Invalidation
-  useEffect(() => {
-    const map = mapInstanceRef.current;
-    if (!map) return;
-
-    map.invalidateSize({ animate: false });
-    updateMapBounds(map);
-
-    const timer = setTimeout(() => {
-      if (mapInstanceRef.current) {
-        mapInstanceRef.current.invalidateSize({ animate: false });
-        updateMapBounds(mapInstanceRef.current);
-      }
-    }, 80);
-
-    return () => clearTimeout(timer);
-  }, [isFullMap, updateMapBounds]);
-
   return (
     <div className="bg-white border border-surface-300 rounded-2xl p-4 shadow-xs space-y-2.5">
       <div className="flex items-center justify-between flex-wrap gap-2">
@@ -308,35 +289,11 @@ export const SimpleMap: React.FC<SimpleMapProps> = ({
               <span>{isLive ? 'Live GPS Active' : 'Live GPS'}</span>
             </button>
           )}
-
-          <button
-            type="button"
-            onClick={() => setIsFullMap((prev) => !prev)}
-            className="flex items-center gap-1 text-2xs font-bold uppercase tracking-wider px-2.5 py-1.5 rounded-lg bg-surface-100 hover:bg-surface-200 text-navy-800 border border-surface-300 transition-colors cursor-pointer"
-          >
-            {isFullMap ? (
-              <>
-                <Minimize2 className="w-3.5 h-3.5 text-navy-600" />
-                <span className="hidden xs:inline">{t('map.closeFullMap')}</span>
-              </>
-            ) : (
-              <>
-                <Maximize2 className="w-3.5 h-3.5 text-navy-600" />
-                <span className="hidden xs:inline">{t('map.openFullMap')}</span>
-              </>
-            )}
-          </button>
         </div>
       </div>
 
       {/* Map Container Wrapper */}
-      <div
-        className={`w-full rounded-xl border border-surface-300 overflow-hidden relative ${
-          isFullMap
-            ? 'h-[460px] sm:h-[520px] lg:h-[600px]'
-            : 'h-[240px] sm:h-[280px] lg:h-[340px]'
-        }`}
-      >
+      <div className="w-full h-[260px] sm:h-[300px] lg:h-[350px] rounded-xl border border-surface-300 overflow-hidden relative">
         <div
           ref={mapContainerRef}
           className="w-full h-full leaflet-container"

@@ -67,27 +67,37 @@ export default function App() {
   const currentLang = i18n.resolvedLanguage || i18n.language || 'en';
 
   // Derive selected port ID from current assessment name
-  const selectedPortId = POPULAR_COASTAL_PORTS.find((p) =>
-    assessment.name.toLowerCase().includes(p.id)
-  )?.id;
+  const selectedPortId = isLiveLocation
+    ? undefined
+    : POPULAR_COASTAL_PORTS.find((p) =>
+        assessment.name.toLowerCase().includes(p.id)
+      )?.id;
 
   // Load location data
-  const loadLocationData = useCallback(async (lat: number, lon: number, nameHint?: string) => {
-    setIsRefreshing(true);
-    try {
-      const assessmentRes = await apiService.analyzeLocation({
-        latitude: lat,
-        longitude: lon,
-        language: currentLang,
-        location_name: nameHint,
-      });
-      setAssessment(assessmentRes);
-    } catch (err) {
-      console.error('Error loading location data:', err);
-    } finally {
-      setIsRefreshing(false);
-    }
-  }, [currentLang]);
+  const loadLocationData = useCallback(
+    async (lat: number, lon: number, nameHint?: string, isLive?: boolean) => {
+      setIsRefreshing(true);
+      try {
+        const assessmentRes = await apiService.analyzeLocation({
+          latitude: lat,
+          longitude: lon,
+          language: currentLang,
+          location_name: nameHint,
+        });
+        if (typeof isLive === 'boolean') {
+          setIsLiveLocation(isLive);
+        } else if (typeof assessmentRes.isLiveLocation === 'boolean') {
+          setIsLiveLocation(assessmentRes.isLiveLocation);
+        }
+        setAssessment(assessmentRes);
+      } catch (err) {
+        console.error('Error loading location data:', err);
+      } finally {
+        setIsRefreshing(false);
+      }
+    },
+    [currentLang]
+  );
 
   // Request browser geolocation or immediately load default harbor live data
   const requestGeolocation = useCallback(() => {
@@ -96,7 +106,7 @@ export default function App() {
     if (!navigator.geolocation) {
       setPermissionDenied(true);
       setIsLiveLocation(false);
-      loadLocationData(defaultPort.lat, defaultPort.lon, `${defaultPort.name}, ${defaultPort.state}`);
+      loadLocationData(defaultPort.lat, defaultPort.lon, `${defaultPort.name}, ${defaultPort.state}`, false);
       return;
     }
 
@@ -106,13 +116,13 @@ export default function App() {
         setPermissionDenied(false);
         setIsLiveLocation(true);
         const { latitude, longitude } = pos.coords;
-        loadLocationData(latitude, longitude, 'Detected GPS Location');
+        loadLocationData(latitude, longitude, 'Live Location', true);
       },
       (err) => {
         console.warn('Geolocation denied or unavailable:', err.message);
         setPermissionDenied(true);
         setIsLiveLocation(false);
-        loadLocationData(defaultPort.lat, defaultPort.lon, `${defaultPort.name}, ${defaultPort.state}`);
+        loadLocationData(defaultPort.lat, defaultPort.lon, `${defaultPort.name}, ${defaultPort.state}`, false);
       },
       { timeout: 8000, enableHighAccuracy: true }
     );
@@ -129,7 +139,8 @@ export default function App() {
       loadLocationData(
         assessment.coordinates.latitude,
         assessment.coordinates.longitude,
-        assessment.name
+        isLiveLocation ? 'Live Location' : assessment.name,
+        isLiveLocation
       );
     }
   }, [currentLang]);
@@ -139,27 +150,28 @@ export default function App() {
     loadLocationData(
       assessment.coordinates.latitude,
       assessment.coordinates.longitude,
-      assessment.name
+      isLiveLocation ? 'Live Location' : assessment.name,
+      isLiveLocation
     );
   };
 
   // Select port from modal, shortcuts, or top bar
   const handleSelectPort = (port: CoastalPort) => {
     setIsLiveLocation(false);
-    loadLocationData(port.lat, port.lon, `${port.name}, ${port.state}`);
+    loadLocationData(port.lat, port.lon, `${port.name}, ${port.state}`, false);
   };
 
   // Select custom coordinates clicked on map or searched
   const handleSelectCoordinates = (lat: number, lon: number, nameHint?: string) => {
     setIsLiveLocation(false);
-    loadLocationData(lat, lon, nameHint);
+    loadLocationData(lat, lon, nameHint || `Coordinates (${lat.toFixed(4)}°N, ${lon.toFixed(4)}°E)`, false);
   };
 
   return (
     <div className="min-h-screen max-w-full overflow-x-hidden bg-surface-100 text-navy-900 flex flex-col antialiased selection:bg-marine-200">
       {/* 1. TOP BAR (with integrated harbor pills) */}
       <MarineTopBar
-        currentLocationName={assessment.name.split(',')[0]}
+        currentLocationName={isLiveLocation ? 'Live Location' : assessment.name.split(',')[0]}
         onOpenLocationPicker={() => setIsSearchOpen(true)}
         ports={POPULAR_COASTAL_PORTS}
         selectedPortId={selectedPortId}
@@ -179,6 +191,7 @@ export default function App() {
               onOpenSearch={() => setIsSearchOpen(true)}
               permissionDenied={permissionDenied}
               onAllowLocation={requestGeolocation}
+              isLiveLocation={isLiveLocation}
             />
 
             {/* Row 2: Recommendation + Map (2-column) */}
@@ -219,6 +232,7 @@ export default function App() {
               onOpenSearch={() => setIsSearchOpen(true)}
               permissionDenied={permissionDenied}
               onAllowLocation={requestGeolocation}
+              isLiveLocation={isLiveLocation}
             />
 
             {/* 2. Recommendation + Ask ORCA (Chatbox in place of map) */}

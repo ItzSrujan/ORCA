@@ -98,15 +98,29 @@ from app.services.coastal_service import COASTAL_PORT_PAIRS, calc_distance_km as
 async def analyze_location(request: dict):
     """Analyze conditions and risk for a specific geographic location using live pipeline data."""
     from app.services.translation_service import translate_text
+    from app.tools.geocoding_tool import reverse_geocode
 
     lat = float(request.get("latitude", 21.6266))
     lon = float(request.get("longitude", 87.5074))
     lang = (request.get("language") or "en").lower()
     raw_loc = (request.get("location_name") or "").strip()
-    if not raw_loc or raw_loc.lower() in ("detected gps location", "your current location", "current location", "here", "my location"):
-        from app.services.coastal_service import find_closest_port
-        closest = find_closest_port(lat, lon)
-        loc_name = closest["name"] if closest else "Coastal Location"
+
+    is_live = not raw_loc or raw_loc.lower() in (
+        "detected gps location",
+        "your current location",
+        "current location",
+        "here",
+        "my location",
+        "live location",
+        "live gps location",
+    )
+
+    if is_live:
+        resolved_place = await reverse_geocode(lat, lon)
+        if resolved_place:
+            loc_name = f"Live Location ({resolved_place})"
+        else:
+            loc_name = "Live Location"
     else:
         loc_name = raw_loc
 
@@ -177,6 +191,7 @@ async def analyze_location(request: dict):
         return {
             "name": loc_name or result.get("location_name") or f"Coordinates ({lat:.2f}°N, {lon:.2f}°E)",
             "coordinates": {"latitude": lat, "longitude": lon},
+            "is_live_location": is_live,
             "last_updated": "Just now",
             "risk_assessment": {
                 "level": ui_risk,

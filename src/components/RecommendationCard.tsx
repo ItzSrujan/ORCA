@@ -76,9 +76,9 @@ const renderFormattedAnswer = (rawText: string) => {
 };
 
 export const RecommendationCard: React.FC<RecommendationCardProps> = ({
-  recommendation,
-  reason,
-  isMissingData = false,
+  recommendation: _recommendation,
+  reason: _reason,
+  isMissingData: _isMissingData = false,
   currentLocation,
 }) => {
   const { t, i18n } = useTranslation();
@@ -207,7 +207,7 @@ export const RecommendationCard: React.FC<RecommendationCardProps> = ({
         )}
       </div>
 
-      {/* Main Content Area: Default Recommendation OR Loading OR AI Response */}
+      {/* Main Content Area: Loading OR AI Response */}
       {isLoading ? (
         <div className="bg-marine-50/80 border border-marine-200 rounded-xl p-3.5 sm:p-4 space-y-1.5 animate-pulse">
           <div className="flex items-center gap-2 text-marine-800 font-semibold text-xs sm:text-sm">
@@ -218,24 +218,7 @@ export const RecommendationCard: React.FC<RecommendationCardProps> = ({
             Evaluating waves, wind velocity, tidal currents, and spatial map data...
           </p>
         </div>
-      ) : !response ? (
-        <div className="bg-surface-100 border border-surface-200 rounded-xl p-3.5 sm:p-4 space-y-2.5">
-          <div className="text-sm sm:text-base text-navy-950 leading-relaxed font-normal">
-            {renderFormattedAnswer(recommendation.replace(/^["']|["']$/g, ''))}
-          </div>
-
-          <div className="mt-2.5 pt-2.5 border-t border-surface-200">
-            <span className="text-2xs font-bold uppercase tracking-wider text-surface-500 block mb-0.5">
-              {t('recommendation.reasonTitle')}:
-            </span>
-            <p className="text-xs sm:text-sm text-navy-800 leading-relaxed font-normal">
-              {isMissingData
-                ? 'Some important information is currently unavailable. Use caution and verify conditions locally before departure.'
-                : reason}
-            </p>
-          </div>
-        </div>
-      ) : (
+      ) : response ? (
         <div className="bg-marine-50/70 border border-marine-200 rounded-xl p-3.5 space-y-2.5 animate-in fade-in duration-200">
           {/* Prompt banner */}
           {(activePrompt || response.query) && (
@@ -370,7 +353,7 @@ export const RecommendationCard: React.FC<RecommendationCardProps> = ({
             </div>
           )}
         </div>
-      )}
+      ) : null}
 
       {/* Integrated Prompt Box */}
       <div className="space-y-2 pt-1">

@@ -53,3 +53,37 @@ async def geocode(place_name: str) -> GeoLocation:
     except Exception as exc:
         logger.error("Geocoding failed for '%s': %s", place_name, exc)
         return GeoLocation(name=place_name, resolved=False)
+
+
+async def reverse_geocode(lat: float, lon: float) -> str | None:
+    """Reverse geocode coordinates to a human-readable city/district/state using Nominatim."""
+    try:
+        async with httpx.AsyncClient(timeout=4.0) as client:
+            resp = await client.get(
+                "https://nominatim.openstreetmap.org/reverse",
+                params={
+                    "lat": lat,
+                    "lon": lon,
+                    "format": "json",
+                },
+                headers={"User-Agent": USER_AGENT},
+            )
+            if resp.status_code == 200:
+                data = resp.json()
+                addr = data.get("address", {})
+                city = (
+                    addr.get("city")
+                    or addr.get("town")
+                    or addr.get("village")
+                    or addr.get("suburb")
+                    or addr.get("state_district")
+                    or addr.get("county")
+                )
+                state = addr.get("state")
+                parts = [p for p in [city, state] if p]
+                if parts:
+                    return ", ".join(parts)
+    except Exception as exc:
+        logger.warning("Reverse geocoding failed for (%.4f, %.4f): %s", lat, lon, exc)
+    return None
+

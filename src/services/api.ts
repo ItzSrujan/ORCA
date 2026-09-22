@@ -327,6 +327,7 @@ export const apiService = {
           recommendation: data.recommendation || 'Conditions are suitable with caution.',
           reason: data.reason || 'Wave conditions are moderate and wind conditions remain within the configured operating range.',
           conditions: data.conditions,
+          isLiveLocation: Boolean(data.is_live_location),
         };
       }
     } catch (err) {
@@ -335,7 +336,11 @@ export const apiService = {
 
     // Fallback profile
     const profile = getProfileForLocation(latitude, longitude, location_name);
-    return profile.assessment;
+    return {
+      ...profile.assessment,
+      name: location_name || profile.assessment.name,
+      isLiveLocation: Boolean(location_name?.toLowerCase().includes('live location') || location_name?.toLowerCase().includes('detected gps')),
+    };
   },
 
   /**

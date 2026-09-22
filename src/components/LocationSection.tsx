@@ -1,7 +1,7 @@
 import React from 'react';
 import { useTranslation } from 'react-i18next';
 import { MapPin, RotateCw, Navigation, Search, ShieldCheck, AlertTriangle, AlertOctagon, HelpCircle } from 'lucide-react';
-import type { LocationAssessment, RiskLevel } from '../types';
+import type { LocationAssessment } from '../types';
 
 interface LocationSectionProps {
   assessment: LocationAssessment;
@@ -10,6 +10,7 @@ interface LocationSectionProps {
   onOpenSearch: () => void;
   permissionDenied: boolean;
   onAllowLocation: () => void;
+  isLiveLocation?: boolean;
 }
 
 const riskConfig: Record<string, { label: string; icon: React.ElementType; badgeBg: string; pulseColor: string }> = {
@@ -26,6 +27,7 @@ export const LocationSection: React.FC<LocationSectionProps> = ({
   onOpenSearch,
   permissionDenied,
   onAllowLocation,
+  isLiveLocation = false,
 }) => {
   const { t } = useTranslation();
   const risk = riskConfig[assessment.riskLevel] || riskConfig.CAUTION;
@@ -64,13 +66,23 @@ export const LocationSection: React.FC<LocationSectionProps> = ({
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           {/* Left: Location info */}
           <div className="flex items-center gap-2.5 min-w-0">
-            <div className="w-9 h-9 rounded-xl bg-marine-100 flex items-center justify-center text-marine-600 shrink-0">
-              <MapPin className="w-5 h-5" />
+            <div className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 ${
+              isLiveLocation ? 'bg-emerald-100 text-emerald-700' : 'bg-marine-100 text-marine-600'
+            }`}>
+              {isLiveLocation ? <Navigation className="w-5 h-5 animate-pulse" /> : <MapPin className="w-5 h-5" />}
             </div>
             <div className="min-w-0">
-              <h1 className="text-lg sm:text-xl font-bold text-navy-950 tracking-tight leading-tight truncate">
-                {assessment.name}
-              </h1>
+              <div className="flex items-center gap-2 flex-wrap">
+                <h1 className="text-lg sm:text-xl font-bold text-navy-950 tracking-tight leading-tight truncate">
+                  {assessment.name}
+                </h1>
+                {isLiveLocation && (
+                  <span className="inline-flex items-center gap-1 text-[11px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 border border-emerald-300 shrink-0">
+                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                    Live GPS
+                  </span>
+                )}
+              </div>
               <p className="text-xs text-surface-500 font-mono">
                 {assessment.coordinates.latitude.toFixed(4)}° N, {assessment.coordinates.longitude.toFixed(4)}° E
               </p>

@@ -47,6 +47,7 @@ export interface LocationAssessment {
   reason: string;
   conditions: LocationConditions;
   isMissingData?: boolean;
+  isLiveLocation?: boolean;
 }
 
 export interface SuggestedLocation {
