@@ -5,7 +5,8 @@ import type {
   CoastalPort,
 } from '../types';
 
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
+const RAW_API_URL = import.meta.env.VITE_API_URL || 'https://orca-backend-v1.vercel.app';
+const API_BASE_URL = RAW_API_URL.replace(/\/+$/, '');
 
 import { INCOIS_PFZ_STATES, ALL_PFZ_COASTS, haversineKm } from '../data/incoisPfz';
 
