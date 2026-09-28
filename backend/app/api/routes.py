@@ -11,6 +11,7 @@ from app.core.logging import get_logger
 from app.schemas.query import QueryRequest, ParsedIntent
 from app.schemas.response import OrcaResponse, DataPayload, RiskAssessment
 from app.orchestration.graph import build_orca_graph
+from app.services.coastal_service import calc_distance_km as _calc_distance_km, find_closest_port
 
 logger = get_logger("api.routes")
 
@@ -103,13 +104,6 @@ async def process_query(request: QueryRequest):
     except Exception as exc:
         logger.exception("Query processing failed: %s", exc)
         raise HTTPException(status_code=500, detail=f"Query processing failed: {exc}")
-
-
-from app.services.coastal_service import (
-    COASTAL_PORT_PAIRS,
-    calc_distance_km as _calc_distance_km,
-    find_closest_port,
-)
 
 
 
@@ -430,10 +424,8 @@ async def translate_endpoint(request: dict):
 @router.post("/api/settings/hf-token")
 async def update_hf_token(request: dict):
     """Update Hugging Face token, verify connectivity, and update backend/.env."""
-    import re
     from pathlib import Path
     import requests
-    from app.core.config import get_settings
 
     token = (request.get("token") or "").strip()
     endpoint_url = (request.get("endpoint_url") or "").strip()

@@ -41,8 +41,8 @@ const renderFormattedAnswer = (rawText: string) => {
 
   // Normalize inline bullets like ")... • **" or "... • **" into distinct lines
   const normalized = rawText
-    .replace(/([.!?\)])\s*•\s*/g, '$1\n• ')
-    .replace(/([.!?\)])\s*-\s*/g, '$1\n- ');
+    .replace(/([.!?]|\))\s*•\s*/g, '$1\n• ')
+    .replace(/([.!?]|\))\s*-\s*/g, '$1\n- ');
 
   const lines = normalized
     .split('\n')
@@ -53,7 +53,7 @@ const renderFormattedAnswer = (rawText: string) => {
     <div className="space-y-1.5 leading-relaxed">
       {lines.map((line, idx) => {
         const isBullet = line.startsWith('•') || line.startsWith('-');
-        const cleanText = isBullet ? line.replace(/^[•\-]\s*/, '') : line;
+        const cleanText = isBullet ? line.replace(/^[•-]\s*/, '') : line;
 
         if (isBullet) {
           return (

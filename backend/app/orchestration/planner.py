@@ -1070,12 +1070,6 @@ async def synthesize_response(state: OrcaState) -> OrcaState:
         llm_provider_name = settings.llm_provider
         if llm_provider_name == "huggingface":
             llm_model_name = settings.hf_model
-        elif llm_provider_name == "openrouter":
-            llm_model_name = settings.openrouter_model
-        elif llm_provider_name == "gemini":
-            llm_model_name = settings.gemini_model
-        elif llm_provider_name == "openai":
-            llm_model_name = settings.openai_model
         else:
             llm_model_name = getattr(llm, "_model", "default")
 
