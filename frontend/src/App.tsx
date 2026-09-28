@@ -238,7 +238,7 @@ export default function App() {
       />
 
       {/* 2. DYNAMIC WORKSPACE VIEW SWITCHER */}
-      <nav aria-label="Dashboard Views" className="bg-[#070D18]/90 backdrop-blur-md border-b border-slate-800/80 px-3 sm:px-5 lg:px-8 py-2 sticky top-[53px] z-20">
+      <nav aria-label="Dashboard Views" className="bg-[#070D18]/90 backdrop-blur-md border-b border-slate-800/80 px-3 sm:px-5 lg:px-8 py-2 sticky top-[92px] md:top-[53px] z-20">
         <div className="w-full flex items-center justify-between gap-3 overflow-x-auto no-scrollbar">
           {/* View Modes Switcher */}
           <div className="flex items-center gap-1 bg-[#050912] p-1 rounded-lg border border-slate-800/90 shrink-0 font-mono text-xs sm:text-sm">
