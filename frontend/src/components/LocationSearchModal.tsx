@@ -1,8 +1,9 @@
 import React, { useState, useMemo, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
-import { X, Search, MapPin, Navigation, Loader2, ChevronLeft, ChevronRight } from 'lucide-react';
+import { X, Search, Navigation, Loader2, ChevronLeft, ChevronRight } from 'lucide-react';
 import { INCOIS_PFZ_STATES, ALL_PFZ_COASTS } from '../data/incoisPfz';
 import type { CoastalPort } from '../types';
+import { translateLocationName, translateStateName } from '../utils/locationTranslations';
 
 interface LocationSearchModalProps {
   isOpen: boolean;
@@ -17,7 +18,8 @@ export const LocationSearchModal: React.FC<LocationSearchModalProps> = ({
   onSelectPort,
   onRequestGeolocation,
 }) => {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
+  const currentLang = i18n.resolvedLanguage || i18n.language || 'en';
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedStateId, setSelectedStateId] = useState<string>('all');
   const [isSearching, setIsSearching] = useState(false);
@@ -123,29 +125,26 @@ export const LocationSearchModal: React.FC<LocationSearchModalProps> = ({
     <div
       role="dialog"
       aria-modal="true"
-      className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-navy-950/70 backdrop-blur-xs p-0 sm:p-4 overflow-y-auto"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-[#040810]/85 backdrop-blur-xs p-3 sm:p-4 overflow-y-auto"
       onClick={onClose}
     >
       <div
-        className="bg-white w-full max-w-2xl rounded-t-3xl sm:rounded-2xl shadow-xl border border-surface-300 max-h-[88vh] flex flex-col animate-in fade-in slide-in-from-bottom-4 duration-200"
+        className="bg-[#0B1322] w-full max-w-2xl rounded-xl shadow-2xl border border-slate-700/80 max-h-[88vh] flex flex-col my-auto text-left text-slate-100"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
-        <div className="p-4 sm:p-5 border-b border-surface-200 flex items-center justify-between shrink-0 bg-surface-50 rounded-t-3xl sm:rounded-t-2xl">
-          <div className="flex items-center gap-2">
-            <MapPin className="w-5 h-5 text-marine-600" />
-            <div>
-              <h2 className="text-base sm:text-lg font-bold text-navy-950">
-                {t('location.chooseLocation', 'Choose Coastal Location & State')}
-              </h2>
-              <p className="text-[11px] text-surface-500 font-medium">
-                Official INCOIS Potential Fishing Zones (PFZ) Coastal Database
-              </p>
-            </div>
+        <div className="p-4 sm:p-5 border-b border-slate-800 flex items-center justify-between shrink-0 bg-[#070D18] rounded-t-xl">
+          <div>
+            <h2 className="text-base sm:text-lg font-bold text-white tracking-tight">
+              {t('location.chooseLocation', 'Select Coastal Harbor')}
+            </h2>
+            <p className="text-2xs font-mono text-slate-400 mt-0.5">
+              INCOIS Potential Fishing Zones (PFZ) Coastal Directory
+            </p>
           </div>
           <button
             onClick={onClose}
-            className="p-2 text-surface-500 hover:text-navy-950 hover:bg-surface-200 rounded-xl transition-colors"
+            className="p-1.5 text-slate-400 hover:text-white hover:bg-slate-800 rounded-md transition-colors cursor-pointer"
             aria-label={t('location.close')}
           >
             <X className="w-5 h-5" />
@@ -153,27 +152,27 @@ export const LocationSearchModal: React.FC<LocationSearchModalProps> = ({
         </div>
 
         {/* Content */}
-        <div className="p-4 sm:p-5 overflow-y-auto space-y-4">
-          {/* GPS Use Current Location Button */}
+        <div className="p-4 sm:p-5 overflow-y-auto space-y-4 text-xs font-sans">
+          {/* GPS Quick Action */}
           <button
             type="button"
             onClick={() => {
               onRequestGeolocation();
               onClose();
             }}
-            className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-marine-600 hover:bg-marine-700 text-white font-semibold text-xs sm:text-sm shadow-xs transition-colors"
+            className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg bg-sky-600 hover:bg-sky-500 text-white font-medium text-xs sm:text-sm transition-colors cursor-pointer"
           >
             <Navigation className="w-4 h-4" />
-            <span>{t('location.allowAccess')} (Live GPS Location)</span>
+            <span>Use Current GPS Location</span>
           </button>
 
-          {/* Search Bar */}
+          {/* Search Input Bar */}
           <div className="space-y-1.5">
             <form onSubmit={handleCustomSearch} className="relative">
               {isSearching ? (
-                <Loader2 className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-marine-600 animate-spin" />
+                <Loader2 className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-sky-400 animate-spin" />
               ) : (
-                <Search className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-surface-400" />
+                <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-500" />
               )}
               <input
                 type="text"
@@ -182,145 +181,145 @@ export const LocationSearchModal: React.FC<LocationSearchModalProps> = ({
                   setSearchTerm(e.target.value);
                   if (searchError) setSearchError(null);
                 }}
-                placeholder="Search coast, harbor or state (e.g. Chapora, Goa, Karwar, Digha)..."
-                className="w-full pl-10 pr-16 py-2.5 rounded-xl border border-surface-300 focus:outline-none focus:ring-2 focus:ring-marine-500 text-sm text-navy-900 bg-surface-50"
+                placeholder="Search coast, port, coordinates (e.g. Karwar, Digha, 18.91, 72.82)..."
+                className="w-full pl-9 pr-14 py-2 rounded-lg border border-slate-700/80 focus:border-sky-500 text-xs sm:text-sm text-slate-100 bg-[#060B14] placeholder:text-slate-500 focus:outline-none font-sans"
               />
               {searchTerm && (
                 <button
                   type="submit"
                   disabled={isSearching}
-                  className="absolute right-2 top-1/2 -translate-y-1/2 px-2.5 py-1 rounded-lg bg-marine-600 hover:bg-marine-700 text-white text-xs font-semibold disabled:opacity-50"
+                  className="absolute right-1.5 top-1/2 -translate-y-1/2 px-2.5 py-1 rounded bg-sky-600 hover:bg-sky-500 text-white text-xs font-medium disabled:opacity-50 transition-colors cursor-pointer"
                 >
                   {isSearching ? '...' : 'Go'}
                 </button>
               )}
             </form>
             {searchError && (
-              <p className="text-2xs text-red-600 font-medium px-1">{searchError}</p>
+              <p className="text-2xs text-rose-400 font-mono px-1">{searchError}</p>
             )}
           </div>
 
-          {/* State Filter Pills / Tabs */}
+          {/* State Filter Tabs */}
           <div>
-            <span className="text-[10px] font-bold uppercase tracking-wider text-surface-500 block mb-1.5 px-1">
-              Select Coastal State ({INCOIS_PFZ_STATES.length} States):
+            <span className="text-xs font-mono uppercase tracking-wider text-slate-400 block mb-2 font-semibold">
+              Filter by State ({INCOIS_PFZ_STATES.length}):
             </span>
 
             <div className="relative flex items-center gap-1.5">
               <button
                 type="button"
                 onClick={() => scrollStateTabs('left')}
-                className="p-1.5 rounded-lg bg-surface-100 hover:bg-surface-200 text-surface-600 hover:text-navy-950 transition-colors shrink-0 shadow-2xs border border-surface-200 cursor-pointer"
-                aria-label="Slide states left"
-                title="Slide states left"
+                className="p-1.5 rounded bg-[#060B14] hover:bg-[#121E33] text-slate-400 hover:text-white transition-colors shrink-0 border border-slate-800 cursor-pointer"
+                aria-label="Slide left"
               >
                 <ChevronLeft className="w-4 h-4" />
               </button>
 
               <div
                 ref={stateTabsRef}
-                className="flex items-center gap-1.5 overflow-x-auto pb-1 no-scrollbar scroll-smooth flex-1 min-w-0"
+                className="flex items-center gap-2 overflow-x-auto pb-1 no-scrollbar scroll-smooth flex-1 min-w-0"
               >
                 <button
                   type="button"
                   onClick={() => setSelectedStateId('all')}
-                  className={`px-3 py-1.5 rounded-lg text-xs font-bold whitespace-nowrap transition-all cursor-pointer ${
+                  className={`px-3 py-1.5 rounded-md text-xs sm:text-sm font-mono font-medium whitespace-nowrap transition-colors cursor-pointer ${
                     selectedStateId === 'all'
-                      ? 'bg-navy-900 text-white shadow-xs'
-                      : 'bg-surface-100 hover:bg-surface-200 text-surface-700'
+                      ? 'bg-sky-600 text-white font-semibold shadow-xs'
+                      : 'bg-[#060B14] hover:bg-[#121E33] text-slate-400 hover:text-white border border-slate-800'
                   }`}
                 >
-                  All Coasts ({ALL_PFZ_COASTS.length})
+                  {currentLang === 'mr' ? 'सर्व' : currentLang === 'hi' ? 'सभी' : 'All'} ({ALL_PFZ_COASTS.length})
                 </button>
 
-                {INCOIS_PFZ_STATES.map((st) => (
-                  <button
-                    key={st.id}
-                    type="button"
-                    onClick={() => setSelectedStateId(st.id)}
-                    className={`px-3 py-1.5 rounded-lg text-xs font-bold whitespace-nowrap transition-all cursor-pointer ${
-                      selectedStateId === st.id
-                        ? 'bg-navy-900 text-white shadow-xs'
-                        : 'bg-surface-100 hover:bg-surface-200 text-surface-700'
-                    }`}
-                  >
-                    {st.displayName} ({st.coastCount})
-                  </button>
-                ))}
+                {INCOIS_PFZ_STATES.map((st) => {
+                  const translatedSt = translateStateName(st.displayName, currentLang);
+                  return (
+                    <button
+                      key={st.id}
+                      type="button"
+                      onClick={() => setSelectedStateId(st.id)}
+                      className={`px-3 py-1.5 rounded-md text-xs sm:text-sm font-mono font-medium whitespace-nowrap transition-colors cursor-pointer ${
+                        selectedStateId === st.id
+                          ? 'bg-sky-600 text-white font-semibold shadow-xs'
+                          : 'bg-[#060B14] hover:bg-[#121E33] text-slate-400 hover:text-white border border-slate-800'
+                      }`}
+                    >
+                      {translatedSt} ({st.coastCount})
+                    </button>
+                  );
+                })}
               </div>
 
               <button
                 type="button"
                 onClick={() => scrollStateTabs('right')}
-                className="p-1.5 rounded-lg bg-surface-100 hover:bg-surface-200 text-surface-600 hover:text-navy-950 transition-colors shrink-0 shadow-2xs border border-surface-200 cursor-pointer"
-                aria-label="Slide states right"
-                title="Slide states right"
+                className="p-1.5 rounded bg-[#060B14] hover:bg-[#121E33] text-slate-400 hover:text-white transition-colors shrink-0 border border-slate-800 cursor-pointer"
+                aria-label="Slide right"
               >
                 <ChevronRight className="w-4 h-4" />
               </button>
             </div>
           </div>
 
-          {/* Coasts Grid / List */}
+          {/* Coasts Grid */}
           <div>
-            <div className="flex items-center justify-between mb-2 px-1">
-              <span className="text-2xs font-bold uppercase tracking-wider text-surface-500">
-                Coastal Landing Centers & Ports ({filteredCoasts.length})
+            <div className="flex items-center justify-between mb-2.5">
+              <span className="text-xs font-mono uppercase tracking-wider text-slate-400 font-semibold">
+                Landing Centers & Ports ({filteredCoasts.length})
               </span>
               {selectedStateId !== 'all' && (
-                <span className="text-[11px] font-semibold text-marine-600">
-                  {INCOIS_PFZ_STATES.find((s) => s.id === selectedStateId)?.displayName}
+                <span className="text-xs font-mono font-medium text-sky-400">
+                  {translateStateName(INCOIS_PFZ_STATES.find((s) => s.id === selectedStateId)?.displayName || '', currentLang)}
                 </span>
               )}
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 max-h-[380px] overflow-y-auto pr-1">
-              {filteredCoasts.slice(0, 150).map((coast) => (
-                <button
-                  key={coast.id}
-                  onClick={() => {
-                    onSelectPort(coast);
-                    onClose();
-                  }}
-                  className="w-full flex items-center justify-between p-3 rounded-xl hover:bg-marine-50/70 border border-surface-200 hover:border-marine-300 text-left transition-all group"
-                >
-                  <div className="flex items-center gap-2.5 min-w-0">
-                    <div className="w-8 h-8 rounded-lg bg-surface-100 group-hover:bg-marine-100 flex items-center justify-center text-surface-600 group-hover:text-marine-700 transition-colors shrink-0">
-                      <MapPin className="w-4 h-4" />
-                    </div>
-                    <div className="min-w-0">
-                      <div className="text-xs sm:text-sm font-bold text-navy-950 group-hover:text-marine-800 truncate">
-                        {coast.name}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 max-h-[380px] overflow-y-auto pr-1">
+              {filteredCoasts.slice(0, 150).map((coast) => {
+                const translatedCoastName = translateLocationName(coast.name, currentLang);
+                const translatedCoastState = translateStateName(coast.state, currentLang);
+                return (
+                  <button
+                    key={coast.id}
+                    onClick={() => {
+                      onSelectPort(coast);
+                      onClose();
+                    }}
+                    className="w-full flex items-center justify-between p-3 rounded-lg bg-[#060B14] hover:bg-[#0E1726] border border-slate-800 hover:border-slate-700 text-left transition-colors cursor-pointer group"
+                  >
+                    <div className="min-w-0 pr-2">
+                      <div className="text-sm sm:text-base font-semibold text-slate-100 group-hover:text-sky-300 truncate">
+                        {translatedCoastName}
                       </div>
-                      <div className="text-2xs text-surface-500 truncate flex items-center gap-1.5 mt-0.5">
-                        <span className="font-semibold text-navy-800">{coast.state}</span>
+                      <div className="text-xs text-slate-400 truncate flex items-center gap-1.5 mt-1 font-mono">
+                        <span className="text-slate-300">{translatedCoastState}</span>
                         <span>•</span>
-                        <span className="text-marine-700 font-medium">PFZ: {coast.distance} km</span>
+                        <span className="text-sky-400">PFZ: {coast.distance} km</span>
                       </div>
                     </div>
-                  </div>
 
-                  <div className="text-right shrink-0 pl-2">
-                    <div className="text-2xs font-bold text-navy-800 bg-surface-100 px-1.5 py-0.5 rounded border border-surface-200">
-                      {coast.direction} ({coast.bearing}°)
+                    <div className="text-right shrink-0">
+                      <div className="text-xs font-mono text-slate-300 bg-[#0B1322] px-2 py-0.5 rounded border border-slate-800">
+                        {coast.direction} ({coast.bearing}°)
+                      </div>
+                      <div className="text-xs text-slate-500 font-mono mt-1">
+                        {coast.depth}m depth
+                      </div>
                     </div>
-                    <div className="text-[10px] text-surface-400 font-mono mt-0.5">
-                      {coast.depth}m depth
-                    </div>
-                  </div>
-                </button>
-              ))}
+                  </button>
+                );
+              })}
 
               {filteredCoasts.length === 0 && (
-                <div className="col-span-full text-center py-8 text-surface-500 text-xs">
-                  No coastal landing centers match "{searchTerm}". Try another state or keyword.
+                <div className="col-span-full text-center py-8 text-slate-500 text-xs sm:text-sm font-mono">
+                  No landing centers match "{searchTerm}". Try another query.
                 </div>
               )}
             </div>
 
             {filteredCoasts.length > 150 && (
-              <p className="text-[11px] text-surface-400 text-center mt-2">
-                Showing top 150 coasts. Use the search bar above to narrow down.
+              <p className="text-xs font-mono text-slate-500 text-center mt-2">
+                Showing top 150 records. Type in search bar to narrow results.
               </p>
             )}
           </div>
@@ -329,4 +328,3 @@ export const LocationSearchModal: React.FC<LocationSearchModalProps> = ({
     </div>
   );
 };
-

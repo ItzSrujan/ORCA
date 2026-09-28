@@ -1,13 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
-import {
-  Compass,
-  MessageSquare,
-  BarChart3,
-  Map as MapIcon,
-  Layers,
-  Anchor,
-} from 'lucide-react';
 import { MarineTopBar } from './components/MarineTopBar';
 import { LocationSection } from './components/LocationSection';
 import { RecommendationCard } from './components/RecommendationCard';
@@ -26,8 +18,8 @@ const DEFAULT_ASSESSMENT: LocationAssessment = {
   lastUpdated: 'Connecting to live telemetry...',
   riskLevel: 'CAUTION',
   riskHeadline: 'INITIALIZING MARINE TELEMETRY...',
-  recommendation: 'Loading live atmospheric, oceanographic, and AIS fleet telemetry...',
-  reason: 'Fetching real-time sensor observations...',
+  recommendation: 'Loading live atmospheric, oceanographic, and port telemetry...',
+  reason: 'Connecting to real-time marine observation feeds...',
   conditions: {
     windSpeedKmH: 0,
     windDirection: '--',
@@ -55,7 +47,6 @@ function useIsDesktop() {
   useEffect(() => {
     const mediaQuery = window.matchMedia('(min-width: 1024px)');
     const handler = (e: MediaQueryListEvent) => setIsDesktop(e.matches);
-    setIsDesktop(mediaQuery.matches);
     mediaQuery.addEventListener('change', handler);
     return () => mediaQuery.removeEventListener('change', handler);
   }, []);
@@ -111,7 +102,7 @@ export default function App() {
             language: currentLangRef.current,
           })
           .then((comp) => setComparisonData(comp))
-          .catch(() => { });
+          .catch(() => {});
       } catch (err) {
         console.error('Error loading location data:', err);
       } finally {
@@ -209,7 +200,7 @@ export default function App() {
   };
 
   return (
-    <div className="min-h-screen max-w-full overflow-x-hidden bg-surface-100 text-navy-900 flex flex-col antialiased selection:bg-marine-200">
+    <div className="min-h-screen max-w-full overflow-x-hidden bg-[#060B13] text-slate-100 flex flex-col antialiased">
       {/* 1. TOP COMMAND BAR */}
       <MarineTopBar
         currentLocationName={isLiveLocation ? t('location.chooseLocation', 'Choose Location') : assessment.name.split(',')[0]}
@@ -224,81 +215,79 @@ export default function App() {
       />
 
       {/* 2. DYNAMIC WORKSPACE VIEW SWITCHER */}
-      <nav aria-label="Dashboard Views" className="bg-white/85 backdrop-blur-md border-b border-surface-200 px-3 sm:px-5 lg:px-8 py-2 sticky top-[57px] z-20 shadow-2xs">
-        <div className="w-full flex items-center justify-between gap-2 overflow-x-auto no-scrollbar">
+      <nav aria-label="Dashboard Views" className="bg-[#070D18]/95 backdrop-blur-md border-b border-slate-800/80 px-3 sm:px-5 lg:px-8 py-2 sticky top-[57px] z-20">
+        <div className="w-full flex items-center justify-between gap-3 overflow-x-auto no-scrollbar">
           {/* View Modes Switcher */}
-          <div className="flex items-center gap-1 bg-surface-100/90 p-1 rounded-xl border border-surface-200/90 shrink-0">
+          <div className="flex items-center gap-1 bg-[#050912] p-1 rounded-lg border border-slate-800/90 shrink-0 font-mono text-xs sm:text-sm">
             <button
               onClick={() => setActiveView('cockpit')}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${activeView === 'cockpit'
-                  ? 'bg-navy-900 text-white shadow-xs'
-                  : 'text-surface-500 hover:text-navy-950 hover:bg-surface-200/60'
-                }`}
+              className={`px-3 py-1.5 rounded transition-colors cursor-pointer ${
+                activeView === 'cockpit'
+                  ? 'bg-slate-800 text-white font-semibold'
+                  : 'text-slate-400 hover:text-slate-200'
+              }`}
             >
-              <Compass className="w-3.5 h-3.5" />
-              <span>{t('nav.tacticalCockpit', 'Tactical Cockpit')}</span>
+              {t('nav.tacticalCockpit', 'Tactical Cockpit')}
             </button>
 
             <button
               onClick={() => setActiveView('chat')}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${activeView === 'chat'
-                  ? 'bg-navy-900 text-white shadow-xs'
-                  : 'text-surface-500 hover:text-navy-950 hover:bg-surface-200/60'
-                }`}
+              className={`px-3 py-1.5 rounded transition-colors cursor-pointer ${
+                activeView === 'chat'
+                  ? 'bg-slate-800 text-white font-semibold'
+                  : 'text-slate-400 hover:text-slate-200'
+              }`}
             >
-              <MessageSquare className="w-3.5 h-3.5" />
-              <span>{t('nav.advisoryConsole', 'Ask ORCA AI')}</span>
+              {t('nav.advisoryConsole', 'Ask ORCA')}
             </button>
 
             <button
               onClick={() => setActiveView('conditions')}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${activeView === 'conditions'
-                  ? 'bg-navy-900 text-white shadow-xs'
-                  : 'text-surface-500 hover:text-navy-950 hover:bg-surface-200/60'
-                }`}
+              className={`px-3 py-1.5 rounded transition-colors cursor-pointer ${
+                activeView === 'conditions'
+                  ? 'bg-slate-800 text-white font-semibold'
+                  : 'text-slate-400 hover:text-slate-200'
+              }`}
             >
-              <BarChart3 className="w-3.5 h-3.5" />
-              <span>{t('nav.telemetryMatrix', 'Live Telemetry')}</span>
+              {t('nav.telemetryMatrix', 'Telemetry Matrix')}
             </button>
 
             <button
               onClick={() => setActiveView('map')}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${activeView === 'map'
-                  ? 'bg-navy-900 text-white shadow-xs'
-                  : 'text-surface-500 hover:text-navy-950 hover:bg-surface-200/60'
-                }`}
+              className={`px-3 py-1.5 rounded transition-colors cursor-pointer ${
+                activeView === 'map'
+                  ? 'bg-slate-800 text-white font-semibold'
+                  : 'text-slate-400 hover:text-slate-200'
+              }`}
             >
-              <MapIcon className="w-3.5 h-3.5" />
-              <span>{t('nav.nauticalMap', 'Ocean Chart')}</span>
+              {t('nav.nauticalMap', 'Satellite Chart')}
             </button>
 
-            {/* Mobile "All-in-One" View Option */}
             <button
               onClick={() => setActiveView('all')}
-              className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer sm:hidden ${activeView === 'all'
-                  ? 'bg-navy-900 text-white shadow-xs'
-                  : 'text-surface-500 hover:text-navy-950 hover:bg-surface-200/60'
-                }`}
+              className={`px-2.5 py-1.5 rounded transition-colors cursor-pointer sm:hidden ${
+                activeView === 'all'
+                  ? 'bg-slate-800 text-white font-semibold'
+                  : 'text-slate-400 hover:text-slate-200'
+              }`}
             >
-              <Layers className="w-3.5 h-3.5" />
-              <span>{t('nav.allView', 'All')}</span>
+              {t('nav.allView', 'All')}
             </button>
           </div>
 
-          {/* Right Status Badge */}
-          <div className="hidden md:flex items-center gap-2 text-2xs text-surface-500 font-medium">
-            <span className="flex items-center gap-1">
-              <span className="w-2 h-2 rounded-full bg-emerald-500 orca-live-beacon" />
-              <span>AIS Satellite Sync: <strong>Live</strong></span>
-            </span>
-            <span>•</span>
-            <span>Open-Meteo High-Res</span>
+          {/* Right Status Readout */}
+          <div className="hidden md:flex items-center gap-2 text-xs font-mono text-slate-400">
+            <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 shrink-0" />
+            <span className="text-slate-300">TELEMETRY:</span>
+            <span className="text-emerald-400">ACTIVE</span>
+            <span className="text-slate-600">|</span>
+            <span>INCOIS PFZ</span>
           </div>
         </div>
       </nav>
 
       {/* 3. MAIN DASHBOARD CONTENT */}
-      <main className="flex-1 w-full px-3 sm:px-5 lg:px-8 xl:px-10 py-4 sm:py-5 lg:py-6 space-y-5">
+      <main className="flex-1 w-full px-3 sm:px-5 lg:px-8 py-4 space-y-4">
         {/* Row 1: High-Impact Location & Risk Command Bar */}
         <LocationSection
           assessment={assessment}
@@ -313,10 +302,10 @@ export default function App() {
         {/* Dynamic View Mode Content */}
         {activeView === 'cockpit' ? (
           /* ── COCKPIT (DUAL-PANEL TACTICAL VIEW) ──────────────── */
-          <div className="space-y-5">
-            <div className="grid grid-cols-12 gap-5 items-start">
-              {/* Left Column (7 cols): AI Intelligence & Telemetry Cards */}
-              <div className="col-span-12 lg:col-span-7 space-y-5">
+          <div className="space-y-4">
+            <div className="grid grid-cols-12 gap-4 items-start">
+              {/* Left Column (7 cols): AI Advisory & Telemetry Cards */}
+              <div className="col-span-12 lg:col-span-7 space-y-4">
                 <RecommendationCard
                   recommendation={assessment.recommendation}
                   reason={assessment.reason}
@@ -327,8 +316,8 @@ export default function App() {
                 <ConditionsGrid conditions={assessment.conditions} />
               </div>
 
-              {/* Right Column (5 cols, sticky): Nautical Map & Sheltered Ports */}
-              <div className="col-span-12 lg:col-span-5 space-y-4 lg:sticky lg:top-36">
+              {/* Right Column (5 cols, sticky): Nautical Map */}
+              <div className="col-span-12 lg:col-span-5 space-y-4 lg:sticky lg:top-32">
                 <SimpleMap
                   currentLocation={assessment}
                   suggestedLocation={comparisonData?.suggested_location}
@@ -336,14 +325,14 @@ export default function App() {
                   onSelectLocation={handleSelectCoordinates}
                   onRequestGeolocation={requestGeolocation}
                   isLocating={isRefreshing}
-                  heightClass="h-[300px] sm:h-[340px] lg:h-[380px]"
+                  heightClass="h-[320px] sm:h-[360px] lg:h-[400px]"
                 />
               </div>
             </div>
           </div>
         ) : activeView === 'chat' ? (
           /* ── FOCUSED AI ADVISORY CONSOLE ───────────────────────── */
-          <div className="max-w-4xl mx-auto space-y-5">
+          <div className="max-w-4xl mx-auto space-y-4">
             <RecommendationCard
               recommendation={assessment.recommendation}
               reason={assessment.reason}
@@ -353,12 +342,12 @@ export default function App() {
             <ConditionsGrid conditions={assessment.conditions} />
           </div>
         ) : activeView === 'conditions' ? (
-          /* ── FULL TELEMETRY & FLEET MATRIX ─────────────────────── */
-          <div className="space-y-5">
+          /* ── FULL TELEMETRY MATRIX ─────────────────────── */
+          <div className="space-y-4">
             <ConditionsGrid conditions={assessment.conditions} />
           </div>
         ) : activeView === 'map' ? (
-          /* ── EXPANDED NAUTICAL OCEAN CHART ─────────────────────── */
+          /* ── EXPANDED SATELLITE OCEAN CHART ─────────────────────── */
           <div className="space-y-4">
             <SimpleMap
               currentLocation={assessment}
@@ -367,12 +356,12 @@ export default function App() {
               onSelectLocation={handleSelectCoordinates}
               onRequestGeolocation={requestGeolocation}
               isLocating={isRefreshing}
-              heightClass="h-[450px] sm:h-[550px] lg:h-[620px]"
+              heightClass="h-[460px] sm:h-[560px] lg:h-[640px]"
             />
           </div>
         ) : (
           /* ── ALL IN ONE (SEQUENTIAL CONTINUOUS FLOW) ───────────── */
-          <div className="w-full space-y-5">
+          <div className="w-full space-y-4">
             <RecommendationCard
               recommendation={assessment.recommendation}
               reason={assessment.reason}
@@ -396,13 +385,10 @@ export default function App() {
       </main>
 
       {/* 4. FOOTER */}
-      <footer className="py-4 text-center text-2xs text-surface-500 border-t border-surface-200 bg-surface-50 mt-auto">
-        <div className="w-full px-4 sm:px-5 lg:px-8 xl:px-10 flex flex-col sm:flex-row items-center justify-between gap-2">
-          <div className="flex items-center gap-2">
-            <Anchor className="w-3.5 h-3.5 text-marine-600" />
-            <p>ORCA Marine Decision Support • Designed for Coastal Navigation & Fishing Safety</p>
-          </div>
-          <p className="text-surface-400">Open-Meteo • ECMWF • Global Fishing Watch • INCOIS Feeds</p>
+      <footer className="py-3.5 text-2xs font-mono text-slate-500 border-t border-slate-800 bg-[#070D18] mt-auto">
+        <div className="w-full px-3 sm:px-5 lg:px-8 flex flex-col sm:flex-row items-center justify-between gap-2">
+          <p>ORCA Marine Decision Support System</p>
+          <p className="text-slate-600">Feeds: INCOIS PFZ • Open-Meteo • ECMWF</p>
         </div>
       </footer>
 

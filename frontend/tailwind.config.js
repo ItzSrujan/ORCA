@@ -1,51 +1,48 @@
 /** @type {import('tailwindcss').Config} */
 export default {
   content: ['./index.html', './src/**/*.{js,ts,jsx,tsx}'],
+  darkMode: 'class',
   theme: {
     extend: {
       colors: {
+        orca: {
+          950: '#060B13', // Deepest canvas background
+          900: '#0A101D', // Primary app container
+          850: '#0E1726', // Standard card surface
+          800: '#131F33', // Elevated card / row
+          750: '#182740', // Hover highlight
+          700: '#1E3252', // Border standard
+          600: '#2A436D', // Border active
+          500: '#0284C7', // Accent blue
+          400: '#38BDF8', // Highlight cyan
+        },
         navy: {
-          950: '#060E1A',
-          900: '#0B1A2E',
-          800: '#122744',
-          700: '#1E3A5F',
-          600: '#2A4D7A',
+          950: '#060B13',
+          900: '#0A101D',
+          800: '#0E1726',
+          700: '#182740',
+          600: '#2A436D',
         },
         marine: {
-          100: '#E3EDF7',
-          200: '#C7DBF0',
-          300: '#9BBDE3',
-          400: '#6F9FD6',
-          500: '#3B7DD8',
-          600: '#2B5FA8',
-        },
-        surface: {
-          50: '#FFFFFF',
-          100: '#F8F9FA',
-          200: '#F1F3F5',
-          300: '#E8EAED',
-          400: '#D1D5DB',
-          500: '#9CA3AF',
-        },
-        risk: {
-          low: '#2E7D4F',
-          'low-bg': '#EBF5EF',
-          moderate: '#C68A1D',
-          'moderate-bg': '#FDF6E8',
-          high: '#C0392B',
-          'high-bg': '#FBEAEA',
+          100: '#0F2744',
+          200: '#173B66',
+          300: '#1E4F8A',
+          400: '#38BDF8',
+          500: '#0284C7',
+          600: '#0369A1',
         },
       },
       fontFamily: {
-        sans: ['Inter', 'system-ui', '-apple-system', 'sans-serif'],
+        sans: ['Inter', 'system-ui', '-apple-system', 'BlinkMacSystemFont', 'sans-serif'],
+        mono: ['JetBrains Mono', 'ui-monospace', 'SFMono-Regular', 'Menlo', 'monospace'],
       },
       fontSize: {
+        '3xs': ['0.625rem', { lineHeight: '0.875rem' }],
         '2xs': ['0.6875rem', { lineHeight: '1rem' }],
       },
       spacing: {
         topbar: '56px',
       },
-
     },
   },
   plugins: [],

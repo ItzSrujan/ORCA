@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap');
 @import 'leaflet/dist/leaflet.css';
 
 @tailwind base;
@@ -18,45 +18,61 @@
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
     text-rendering: optimizeLegibility;
+    color-scheme: dark;
   }
 
   body {
-    @apply bg-surface-100 text-navy-900 font-sans text-sm leading-relaxed m-0;
+    background-color: #060B13;
+    color: #E2E8F0;
+    font-family: 'Inter', system-ui, -apple-system, sans-serif;
+    font-size: 0.8125rem;
+    line-height: 1.5;
+    margin: 0;
   }
 
   h1, h2, h3, h4 {
-    @apply font-semibold tracking-tight text-navy-900;
+    color: #F8FAFC;
+    letter-spacing: -0.015em;
+    font-weight: 600;
   }
 }
 
-/* ── Scrollbar ──────────────────────────────────────────────── */
+/* ── Scrollbars ─────────────────────────────────────────────── */
 
 ::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
+  width: 5px;
+  height: 5px;
 }
 
 ::-webkit-scrollbar-track {
-  background: transparent;
+  background: #060B13;
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #c4c9d0;
+  background: #1E293B;
   border-radius: 3px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: #9ca3af;
+  background: #334155;
 }
 
-/* ── Leaflet Fix ────────────────────────────────────────────── */
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+/* ── Leaflet Dark Theme Overrides ───────────────────────────── */
 
 .leaflet-container {
   font-family: inherit !important;
   z-index: 0;
   width: 100% !important;
   height: 100% !important;
-  background-color: #e5e9ec !important;
+  background-color: #060B13 !important;
 }
 
 .leaflet-tile-pane {
@@ -67,7 +83,76 @@
   visibility: inherit !important;
 }
 
-/* ── Custom Pins & Marker Fix ───────────────────────────────── */
+.leaflet-marker-pane {
+  z-index: 600 !important;
+}
+
+.leaflet-overlay-pane {
+  z-index: 400 !important;
+}
+
+.leaflet-popup-content-wrapper {
+  background-color: #0B1322 !important;
+  color: #E2E8F0 !important;
+  border: 1px solid #1E293B !important;
+  border-radius: 8px !important;
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.75) !important;
+  padding: 2px !important;
+}
+
+.leaflet-popup-content {
+  margin: 10px 12px !important;
+  line-height: 1.4 !important;
+}
+
+.leaflet-popup-tip {
+  background-color: #0B1322 !important;
+  border: 1px solid #1E293B !important;
+}
+
+.leaflet-container a.leaflet-popup-close-button {
+  color: #94A3B8 !important;
+  padding: 6px 6px 0 0 !important;
+}
+
+.leaflet-container a.leaflet-popup-close-button:hover {
+  color: #F8FAFC !important;
+}
+
+/* ── Leaflet Tooltips (Tactical Dark Command Center) ────────── */
+.leaflet-tooltip,
+.orca-map-tooltip {
+  background-color: #0B1322 !important;
+  color: #FFFFFF !important;
+  border: 1px solid #334155 !important;
+  border-radius: 6px !important;
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.85), 0 0 0 1px rgba(255, 255, 255, 0.08) !important;
+  padding: 6px 10px !important;
+  font-family: 'Inter', system-ui, -apple-system, sans-serif !important;
+  pointer-events: none !important;
+}
+
+.leaflet-tooltip-top:before,
+.orca-map-tooltip.leaflet-tooltip-top:before {
+  border-top-color: #0B1322 !important;
+}
+
+.leaflet-tooltip-bottom:before,
+.orca-map-tooltip.leaflet-tooltip-bottom:before {
+  border-bottom-color: #0B1322 !important;
+}
+
+.leaflet-tooltip-left:before,
+.orca-map-tooltip.leaflet-tooltip-left:before {
+  border-left-color: #0B1322 !important;
+}
+
+.leaflet-tooltip-right:before,
+.orca-map-tooltip.leaflet-tooltip-right:before {
+  border-right-color: #0B1322 !important;
+}
+
+/* ── Custom Map Pins ────────────────────────────────────────── */
 
 .orca-current-pin,
 .orca-live-pin,
@@ -83,14 +168,14 @@
 @keyframes orca-radar-pulse {
   0% {
     transform: scale(0.6);
-    opacity: 0.9;
+    opacity: 0.8;
   }
   70% {
-    transform: scale(2.5);
+    transform: scale(2.4);
     opacity: 0;
   }
   100% {
-    transform: scale(2.8);
+    transform: scale(2.6);
     opacity: 0;
   }
 }
@@ -99,55 +184,12 @@
   animation: orca-radar-pulse 2s cubic-bezier(0.25, 1, 0.5, 1) infinite;
 }
 
-.leaflet-marker-pane {
-  z-index: 600 !important;
-}
-
-.leaflet-overlay-pane {
-  z-index: 400 !important;
-}
-
-/* ── Modern Oceanic Design System ──────────────────────────── */
-
-.orca-mesh-bg {
-  background-color: #0b1322;
-  background-image: 
-    radial-gradient(at 0% 0%, rgba(20, 50, 90, 0.4) 0px, transparent 50%),
-    radial-gradient(at 100% 0%, rgba(14, 75, 110, 0.35) 0px, transparent 50%),
-    radial-gradient(at 50% 100%, rgba(10, 30, 60, 0.6) 0px, transparent 50%);
-}
-
-.orca-glass-panel {
-  background: rgba(255, 255, 255, 0.94);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  border: 1px solid rgba(226, 232, 240, 0.85);
-  box-shadow: 0 4px 20px -2px rgba(11, 26, 46, 0.05), 0 2px 6px -1px rgba(11, 26, 46, 0.03);
-}
-
-.orca-glass-panel-dark {
-  background: rgba(11, 26, 46, 0.85);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.3);
-}
-
-.orca-card {
-  transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.2s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.2s ease;
-}
-
-.orca-card:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 10px 25px -3px rgba(11, 26, 46, 0.08), 0 4px 12px -2px rgba(11, 26, 46, 0.04);
-}
-
 @keyframes orca-beacon-pulse {
   0% {
-    box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.6);
+    box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7);
   }
   70% {
-    box-shadow: 0 0 0 8px rgba(16, 185, 129, 0);
+    box-shadow: 0 0 0 6px rgba(16, 185, 129, 0);
   }
   100% {
     box-shadow: 0 0 0 0 rgba(16, 185, 129, 0);
@@ -158,13 +200,24 @@
   animation: orca-beacon-pulse 2s infinite cubic-bezier(0.4, 0, 0.6, 1);
 }
 
-/* Hide scrollbar for clean tab pill strips */
-.no-scrollbar::-webkit-scrollbar {
-  display: none;
-}
-.no-scrollbar {
-  -ms-overflow-style: none;
-  scrollbar-width: none;
+/* ── Professional Command Theme Utilities ───────────────────── */
+
+.orca-panel {
+  background-color: #0A111E;
+  border: 1px solid #162238;
 }
 
+.orca-panel-elevated {
+  background-color: #0E1726;
+  border: 1px solid #1A2840;
+}
 
+.orca-card {
+  background-color: #0A111E;
+  border: 1px solid #162238;
+  transition: border-color 0.15s ease, background-color 0.15s ease;
+}
+
+.orca-card:hover {
+  border-color: #233758;
+}

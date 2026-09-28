@@ -1,7 +1,12 @@
 import React from 'react';
 import { useTranslation } from 'react-i18next';
-import { X, CheckCircle2, ShieldCheck, AlertTriangle } from 'lucide-react';
+import { X, Check } from 'lucide-react';
 import type { LocationAssessment, SuggestedLocation } from '../types';
+import {
+  translateLocationName,
+  translateTideStatus,
+  translateUnit,
+} from '../utils/locationTranslations';
 
 interface LocationComparisonModalProps {
   isOpen: boolean;
@@ -16,7 +21,8 @@ export const LocationComparisonModal: React.FC<LocationComparisonModalProps> = (
   currentLocation,
   suggestedLocation,
 }) => {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
+  const currentLang = i18n.resolvedLanguage || i18n.language || 'en';
 
   if (!isOpen) return null;
 
@@ -26,45 +32,39 @@ export const LocationComparisonModal: React.FC<LocationComparisonModalProps> = (
   const rows = [
     {
       label: t('conditions.wind'),
-      current: `${currentCond.windSpeedKmH} km/h`,
-      suggested: `${suggestedCond.windSpeedKmH} km/h`,
+      current: `${currentCond.windSpeedKmH} ${translateUnit('km/h', currentLang)}`,
+      suggested: `${suggestedCond.windSpeedKmH} ${translateUnit('km/h', currentLang)}`,
       better: suggestedCond.windSpeedKmH < currentCond.windSpeedKmH,
-      sublabel: suggestedCond.windStatus,
     },
     {
       label: t('conditions.waves'),
-      current: `${currentCond.waveHeightM} m`,
-      suggested: `${suggestedCond.waveHeightM} m`,
+      current: `${currentCond.waveHeightM} ${translateUnit('m', currentLang)}`,
+      suggested: `${suggestedCond.waveHeightM} ${translateUnit('m', currentLang)}`,
       better: suggestedCond.waveHeightM < currentCond.waveHeightM,
-      sublabel: suggestedCond.waveStatus,
     },
     {
       label: t('conditions.current'),
-      current: `${currentCond.currentSpeedMs} m/s`,
-      suggested: `${suggestedCond.currentSpeedMs} m/s`,
+      current: `${currentCond.currentSpeedMs} ${translateUnit('m/s', currentLang)}`,
+      suggested: `${suggestedCond.currentSpeedMs} ${translateUnit('m/s', currentLang)}`,
       better: suggestedCond.currentSpeedMs <= currentCond.currentSpeedMs,
-      sublabel: suggestedCond.currentStatus,
     },
     {
       label: t('conditions.seaTemp'),
       current: `${currentCond.seaTemperatureC}°C`,
       suggested: `${suggestedCond.seaTemperatureC}°C`,
       better: false,
-      sublabel: 'Warm',
     },
     {
       label: t('conditions.tide'),
-      current: currentCond.tideStatus,
-      suggested: suggestedCond.tideStatus,
+      current: translateTideStatus(currentCond.tideStatus, currentLang),
+      suggested: translateTideStatus(suggestedCond.tideStatus, currentLang),
       better: false,
-      sublabel: undefined,
     },
     {
       label: t('conditions.fishingAdvisory'),
       current: currentCond.fishingAdvisoryAvailable ? t('conditions.advisoryAvailable') : t('conditions.advisoryUnavailable'),
       suggested: suggestedCond.fishingAdvisoryAvailable ? t('conditions.advisoryAvailable') : t('conditions.advisoryUnavailable'),
       better: suggestedCond.fishingAdvisoryAvailable,
-      sublabel: suggestedCond.fishingAdvisorySummary,
     },
     {
       label: t('comparison.overallRisk'),
@@ -86,22 +86,28 @@ export const LocationComparisonModal: React.FC<LocationComparisonModalProps> = (
     <div
       role="dialog"
       aria-modal="true"
-      className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-navy-950/70 backdrop-blur-xs p-0 sm:p-4 overflow-y-auto"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-[#040810]/85 backdrop-blur-xs p-3 sm:p-4 overflow-y-auto"
+      onClick={onClose}
     >
-      <div className="bg-white w-full max-w-3xl rounded-t-3xl sm:rounded-2xl shadow-xl border border-surface-300 max-h-[92vh] flex flex-col animate-in fade-in slide-in-from-bottom-4 duration-200">
+      <div
+        className="bg-[#0B1322] w-full max-w-3xl rounded-xl shadow-2xl border border-slate-700/80 max-h-[90vh] flex flex-col my-auto text-left text-slate-100"
+        onClick={(e) => e.stopPropagation()}
+      >
         {/* Header */}
-        <div className="p-4 sm:p-5 border-b border-surface-200 flex items-center justify-between shrink-0 bg-surface-50 rounded-t-3xl sm:rounded-t-2xl">
+        <div className="p-4 sm:p-5 border-b border-slate-800 flex items-center justify-between shrink-0 bg-[#070D18] rounded-t-xl">
           <div>
-            <span className="text-2xs font-bold uppercase tracking-wider text-marine-700 bg-marine-100 px-2 py-0.5 rounded">
+            <span className="text-2xs font-mono font-bold uppercase tracking-wider text-sky-400 bg-sky-950/60 border border-sky-800/60 px-2 py-0.5 rounded">
               {t('comparison.title')}
             </span>
-            <h2 className="text-lg font-bold text-navy-950 mt-1">
-              {currentLocation.name.split(',')[0]} <span className="text-surface-400 font-normal">vs</span> {suggestedLocation.name}
+            <h2 className="text-base sm:text-lg font-bold text-white mt-1.5 tracking-tight">
+              {translateLocationName(currentLocation.name.split(',')[0], currentLang)}{' '}
+              <span className="text-slate-500 font-normal">vs</span>{' '}
+              {translateLocationName(suggestedLocation.name, currentLang)}
             </h2>
           </div>
           <button
             onClick={onClose}
-            className="p-2 text-surface-500 hover:text-navy-950 hover:bg-surface-200 rounded-xl transition-colors"
+            className="p-1.5 text-slate-400 hover:text-white hover:bg-slate-800 rounded-md transition-colors cursor-pointer"
             aria-label={t('comparison.close')}
           >
             <X className="w-5 h-5" />
@@ -109,69 +115,67 @@ export const LocationComparisonModal: React.FC<LocationComparisonModalProps> = (
         </div>
 
         {/* Modal Body */}
-        <div className="p-4 sm:p-5 overflow-y-auto space-y-4">
+        <div className="p-4 sm:p-5 overflow-y-auto space-y-4 font-sans text-xs">
           {/* Why is suggested location better banner */}
-          <div className="bg-emerald-50 border border-emerald-200 rounded-xl p-3.5">
-            <div className="flex items-center gap-2 text-emerald-900 font-bold text-xs uppercase tracking-wider mb-1">
-              <ShieldCheck className="w-4 h-4 text-emerald-700" />
+          <div className="bg-emerald-950/40 border border-emerald-800/60 rounded-lg p-3.5 space-y-1">
+            <div className="text-emerald-400 font-mono font-bold text-2xs uppercase tracking-wider">
               {t('comparison.whyBetterTitle')}
             </div>
-            <p className="text-xs sm:text-sm text-emerald-950 leading-relaxed font-medium">
+            <p className="text-xs sm:text-sm text-emerald-100 leading-relaxed font-normal">
               "{suggestedLocation.reasonForSuggestion}"
             </p>
           </div>
 
           {/* Location Cards Header */}
           <div className="grid grid-cols-2 gap-2 sm:gap-3 text-center">
-            <div className="p-3 rounded-xl bg-surface-100 border border-surface-200">
-              <span className="text-2xs font-bold uppercase tracking-wider text-surface-500 block">
+            <div className="p-3 rounded-lg bg-[#060B14] border border-slate-800">
+              <span className="text-2xs font-mono uppercase tracking-wider text-slate-400 block">
                 {t('comparison.current')}
               </span>
-              <span className="text-sm sm:text-base font-bold text-navy-950 truncate block mt-0.5">
+              <span className="text-sm sm:text-base font-bold text-white truncate block mt-0.5">
                 {currentLocation.name.split(',')[0]}
               </span>
-              <span className="inline-flex items-center gap-1 text-2xs text-amber-700 font-semibold mt-1">
-                <AlertTriangle className="w-3 h-3" />
+              <span className="text-2xs font-mono text-amber-400 mt-1 block">
                 {currentLocation.riskLevel}
               </span>
             </div>
 
-            <div className="p-3 rounded-xl bg-emerald-50 border-2 border-emerald-300">
-              <span className="text-2xs font-bold uppercase tracking-wider text-emerald-700 block">
+            <div className="p-3 rounded-lg bg-emerald-950/30 border border-emerald-600/60">
+              <span className="text-2xs font-mono uppercase tracking-wider text-emerald-400 block">
                 {t('comparison.suggested')}
               </span>
-              <span className="text-sm sm:text-base font-bold text-navy-950 truncate block mt-0.5">
+              <span className="text-sm sm:text-base font-bold text-white truncate block mt-0.5">
                 {suggestedLocation.name}
               </span>
-              <span className="inline-flex items-center gap-1 text-2xs text-emerald-800 font-bold mt-1">
-                <ShieldCheck className="w-3 h-3 text-emerald-600" />
+              <span className="text-2xs font-mono text-emerald-300 font-semibold mt-1 block">
                 {t('suggested.badge')} ({suggestedLocation.distanceKm} km)
               </span>
             </div>
           </div>
 
-          {/* Comparison Table / Rows */}
-          <div className="border border-surface-200 rounded-xl overflow-hidden divide-y divide-surface-200">
+          {/* Comparison Table */}
+          <div className="border border-slate-800 rounded-lg overflow-hidden divide-y divide-slate-800/80 bg-[#060B14]">
             {rows.map((row, idx) => (
               <div
                 key={idx}
-                className={`grid grid-cols-3 p-2.5 sm:p-3 text-xs items-center ${row.highlight ? 'bg-surface-50 font-bold' : 'hover:bg-surface-50/50'
-                  }`}
+                className={`grid grid-cols-3 p-2.5 sm:p-3 text-xs items-center ${
+                  row.highlight ? 'bg-[#0B1322] font-semibold text-white' : 'hover:bg-[#0A101C]'
+                }`}
               >
-                <div className="font-semibold text-navy-800">
+                <div className="text-slate-300 font-medium">
                   {row.label}
                 </div>
 
-                <div className="text-center text-surface-600 font-mono">
+                <div className="text-center text-slate-400 font-mono">
                   {row.current}
                 </div>
 
-                <div className="text-center font-mono flex items-center justify-center gap-1">
-                  <span className={row.better ? 'text-emerald-700 font-bold' : 'text-navy-900'}>
+                <div className="text-center font-mono flex items-center justify-center gap-1.5">
+                  <span className={row.better ? 'text-emerald-400 font-semibold' : 'text-slate-200'}>
                     {row.suggested}
                   </span>
                   {row.better && (
-                    <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 shrink-0 inline" />
+                    <Check className="w-3.5 h-3.5 text-emerald-400 shrink-0 inline" />
                   )}
                 </div>
               </div>
@@ -180,10 +184,10 @@ export const LocationComparisonModal: React.FC<LocationComparisonModalProps> = (
         </div>
 
         {/* Footer */}
-        <div className="p-4 border-t border-surface-200 bg-surface-50 shrink-0 flex items-center justify-end rounded-b-3xl sm:rounded-b-2xl">
+        <div className="p-3.5 sm:p-4 border-t border-slate-800 bg-[#070D18] shrink-0 flex items-center justify-end rounded-b-xl">
           <button
             onClick={onClose}
-            className="w-full sm:w-auto px-5 py-2.5 rounded-xl bg-navy-900 hover:bg-navy-800 text-white text-xs sm:text-sm font-semibold transition-colors"
+            className="w-full sm:w-auto px-4 py-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-white text-xs sm:text-sm font-medium transition-colors cursor-pointer"
           >
             {t('comparison.close')}
           </button>
