@@ -67,17 +67,6 @@ export const MarineTopBar: React.FC<MarineTopBarProps> = ({
           </div>
         </div>
 
-        {/* Center: Live Telemetry Indicator (Desktop) */}
-        <div className="hidden xl:flex items-center gap-2 px-3 py-1 rounded-md bg-[#0C1524] border border-slate-800 text-2xs text-slate-400 font-mono">
-          <span className="w-2 h-2 rounded-full bg-emerald-400 orca-live-beacon shrink-0" />
-          <span className="text-slate-300">FEEDS:</span>
-          <span className="text-emerald-400 font-medium">INCOIS PFZ</span>
-          <span className="text-slate-600">•</span>
-          <span className="text-slate-300 font-medium">Open-Meteo</span>
-          <span className="text-slate-600">•</span>
-          <span className="text-slate-300 font-medium">ECMWF</span>
-        </div>
-
         {/* Right: GPS, Location Selector, Refresh & Language Switcher */}
         <div className="flex items-center gap-2 shrink-0 min-w-0">
           {/* Live GPS Quick Locate */}

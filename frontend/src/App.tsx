@@ -385,10 +385,9 @@ export default function App() {
       </main>
 
       {/* 4. FOOTER */}
-      <footer className="py-3.5 text-2xs font-mono text-slate-500 border-t border-slate-800 bg-[#070D18] mt-auto">
-        <div className="w-full px-3 sm:px-5 lg:px-8 flex flex-col sm:flex-row items-center justify-between gap-2">
+      <footer className="py-3.5 text-xs font-mono text-slate-500 border-t border-slate-800 bg-[#070D18] mt-auto">
+        <div className="w-full px-3 sm:px-5 lg:px-8 flex items-center justify-between gap-2">
           <p>ORCA Marine Decision Support System</p>
-          <p className="text-slate-600">Feeds: INCOIS PFZ • Open-Meteo • ECMWF</p>
         </div>
       </footer>
 
