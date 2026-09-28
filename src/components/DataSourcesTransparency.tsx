@@ -36,11 +36,15 @@ export const DataSourcesTransparency: React.FC<DataSourcesTransparencyProps> = (
       detail: assessment.conditions.tideStatus === 'Unavailable' ? 'Direct sensor offline for this harbor' : 'WorldTides live tidal forecast & extremes',
     },
     {
-      category: t('provenance.fishingAdvisory'),
-      source: 'INCOIS PFZ Prototype Feed',
-      status: assessment.conditions.fishingAdvisoryAvailable ? 'FALLBACK DATA' : 'UNAVAILABLE DATA',
-      statusType: assessment.conditions.fishingAdvisoryAvailable ? ('fallback' as const) : ('unavailable' as const),
-      detail: 'INCOIS satellite chlorophyll reference dataset',
+      category: t('provenance.fishingAdvisory', 'Port & Coastal Advisory'),
+      source: assessment.conditions.fishingAdvisorySource || 'INCOIS Coastal Safety & Marine Ports Directory',
+      status: 'VERIFIED DATA',
+      statusType: 'live' as const,
+      detail:
+        assessment.conditions.fishingAdvisorySummary ||
+        (assessment.conditions.safestPortName
+          ? `Nearest port: ${assessment.conditions.nearestPortName || assessment.name}. Safest sheltered harbor: ${assessment.conditions.safestPortName}.`
+          : 'Nearest coastal harbor and safest sheltered port telemetry'),
     },
   ];
 

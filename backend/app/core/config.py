@@ -7,17 +7,11 @@ from pydantic import Field
 class Settings(BaseSettings):
     """Application settings — sourced from .env or environment."""
 
-    # ── LLM ────────────────────────────────────────────────────
-    llm_provider: str = Field(default="auto", description="'auto', 'openrouter', 'huggingface', 'openai', or 'local'")
-    openrouter_api_key: str = Field(default="")
-    openrouter_model: str = Field(default="google/gemini-2.0-flash-exp:free")
-    hf_model: str = Field(default="zai-org/GLM-5.3")
+    # ── LLM (Hugging Face Only) ────────────────────────────────
+    llm_provider: str = Field(default="huggingface", description="Sole supported provider: 'huggingface'")
+    hf_model: str = Field(default="Qwen/Qwen2.5-72B-Instruct")
     hf_token: str = Field(default="")
-    openai_api_key: str = Field(default="")
-    openai_base_url: str = Field(default="")
-    openai_model: str = Field(default="gpt-4o-mini")
-    gemini_api_key: str = Field(default="")
-    gemini_model: str = Field(default="gemini-2.0-flash")
+    hf_endpoint_url: str = Field(default="")
 
     # ── Tide ───────────────────────────────────────────────────
     tide_api_key: str = Field(default="f6d16127-1c5e-47dd-b589-d5ac8b1aacfd")
@@ -32,6 +26,10 @@ class Settings(BaseSettings):
     open_meteo_marine_url: str = Field(default="https://marine-api.open-meteo.com/v1/marine")
     open_meteo_customer_url: str = Field(default="https://customer-marine-api.open-meteo.com/v1/marine")
     open_meteo_api_key: str = Field(default="")
+
+    # ── Global Fishing Watch (GFW) API ─────────────────────────
+    gfw_access_token: str = Field(default="")
+    gfw_api_url: str = Field(default="https://gateway.api.globalfishingwatch.org/v3")
 
     # ── Risk thresholds ────────────────────────────────────────
     risk_wave_moderate_threshold: float = Field(default=1.0)
@@ -50,8 +48,8 @@ class Settings(BaseSettings):
 _settings: Settings | None = None
 
 
-def get_settings() -> Settings:
+def get_settings(reload: bool = False) -> Settings:
     global _settings
-    if _settings is None:
+    if _settings is None or reload:
         _settings = Settings()
     return _settings

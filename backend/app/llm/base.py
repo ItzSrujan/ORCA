@@ -1,4 +1,4 @@
-"""Abstract LLM provider interface and factory."""
+"""Abstract LLM provider interface and factory — Hugging Face Only."""
 
 from __future__ import annotations
 
@@ -11,7 +11,7 @@ logger = get_logger("llm")
 
 
 class LLMProvider(ABC):
-    """Base class for all LLM providers."""
+    """Base class for LLM providers."""
 
     @abstractmethod
     async def generate(self, prompt: str, max_tokens: int = 512) -> str:
@@ -25,42 +25,9 @@ class LLMProvider(ABC):
 
 
 def get_llm_provider() -> LLMProvider:
-    """Factory — returns the appropriate LLM provider based on configuration.
-
-    Supports OpenRouter, Hugging Face, OpenAI/Groq/Ollama, or local transformers.
-    """
-    settings = get_settings()
-    provider_name = settings.llm_provider.lower().strip()
-
-    # Explicit or auto OpenRouter
-    if provider_name == "openrouter" or (provider_name == "auto" and settings.openrouter_api_key):
-        from app.llm.openrouter_provider import OpenRouterProvider
-
-        logger.info("Using OpenRouter provider (model=%s)", settings.openrouter_model)
-        return OpenRouterProvider()
-
-    # Explicit or auto OpenAI / Groq / Ollama
-    if provider_name == "openai" or (provider_name == "auto" and settings.openai_api_key):
-        from app.llm.openai_provider import OpenAIProvider
-
-        logger.info("Using OpenAI-compatible provider (model=%s)", settings.openai_model)
-        return OpenAIProvider()
-    # Explicit or auto Gemini
-    if provider_name == "gemini" or (provider_name == "auto" and settings.gemini_api_key):
-        from app.llm.gemini_provider import GeminiProvider
-
-        logger.info("Using Google Gemini provider (model=%s)", settings.gemini_model)
-        return GeminiProvider()
-
-    # Local transformers
-    if provider_name == "local":
-        from app.llm.local_provider import LocalTransformersProvider
-
-        logger.info("Using local Transformers pipeline provider")
-        return LocalTransformersProvider()
-
-    # Hugging Face Inference API
+    """Factory — returns the Hugging Face Inference API provider."""
     from app.llm.huggingface_provider import HuggingFaceInferenceProvider
 
+    settings = get_settings()
     logger.info("Using Hugging Face Inference API provider (model=%s)", settings.hf_model)
     return HuggingFaceInferenceProvider()

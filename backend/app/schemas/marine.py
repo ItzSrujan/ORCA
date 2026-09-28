@@ -81,7 +81,7 @@ class TideData(BaseModel):
 
 
 class PFZAdvisory(BaseModel):
-    """Potential Fishing Zone advisory."""
+    """Potential Fishing Zone / Fishing Advisory data."""
 
     available: bool = False
     zone: str = ""
@@ -91,3 +91,26 @@ class PFZAdvisory(BaseModel):
     longitude: float | None = None
     source: str = ""
     is_live: bool = False
+    # Safest & Nearest Port Telemetry
+    nearest_port_name: str | None = None
+    nearest_port_distance_km: float | None = None
+    safest_port_name: str | None = None
+    safest_port_distance_km: float | None = None
+    safest_port_reason: str | None = None
+    # Real-time Telemetry & Vessel Fields (retained for backward compatibility)
+    nearest_vessel_name: str | None = None
+    distance_to_vessel_km: float | None = None
+    distance_from_shore_km: float | None = None
+    active_fleet_count: int | None = None
+    average_speed_knots: float | None = None
+    potential_risk: bool | None = None
+    vessel_type: str | None = None
+    flag: str | None = None
+    depth_range_m: str | None = None
+    species_likely: list[str] | None = None
+    # INCOIS Coastal PFZ Data
+    coast_name: str | None = None
+    direction: str | None = None
+    bearing: float | None = None
+    distance_km: str | None = None
+

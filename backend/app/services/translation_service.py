@@ -174,7 +174,10 @@ async def _translate_via_mymemory_pkg(text: str, target_lang: str, source_lang: 
     try:
         from deep_translator import MyMemoryTranslator
 
-        src = "en-GB" if source_lang in ("en", "english", "auto", "") else ("hi-IN" if source_lang in ("hi", "hindi") else "mr-IN")
+        if source_lang in ("en", "english", "auto", ""):
+            src = "hi-IN" if re.search(r"[\u0900-\u097F]", text) else "en-GB"
+        else:
+            src = "hi-IN" if source_lang in ("hi", "hindi") else "mr-IN"
         tgt = "hi-IN" if target_lang in ("hi", "hindi") else ("mr-IN" if target_lang in ("mr", "marathi") else "en-GB")
         
         loop = asyncio.get_running_loop()
@@ -198,7 +201,10 @@ async def _translate_via_mymemory_pkg(text: str, target_lang: str, source_lang: 
 async def _translate_via_mymemory_api(text: str, target_lang: str, source_lang: str = "auto") -> str | None:
     """Translate using direct MyMemory HTTP API with chunking."""
     try:
-        src = "en" if source_lang in ("en", "english", "auto", "") else ("hi" if source_lang in ("hi", "hindi") else "mr")
+        if source_lang in ("en", "english", "auto", ""):
+            src = "hi" if re.search(r"[\u0900-\u097F]", text) else "en"
+        else:
+            src = "hi" if source_lang in ("hi", "hindi") else "mr"
         tgt = "hi" if target_lang in ("hi", "hindi") else ("mr" if target_lang in ("mr", "marathi") else "en")
 
         chunks = _split_into_chunks(text, max_chars=380)
@@ -307,7 +313,8 @@ async def translate_text(text: str, target_lang: str, source_lang: str = "auto")
     source_lang = source_lang.lower().strip()
 
     # Fast return if already target language and source language match
-    if target_lang in ("en", "english") and source_lang in ("en", "english"):
+    is_devanagari = bool(re.search(r"[\u0900-\u097F]", text))
+    if target_lang in ("en", "english") and (source_lang in ("en", "english") or not is_devanagari):
         return text
 
     # Tier 1: MyMemory via deep-translator package
@@ -333,5 +340,17 @@ async def translate_text(text: str, target_lang: str, source_lang: str = "auto")
     # Tier 5: Deterministic Offline Dictionary & Patterns
     if target_lang in ("hi", "hindi", "mr", "marathi"):
         return _translate_offline_dictionary(text, target_lang)
+    elif target_lang in ("en", "english"):
+        # Reverse translation for Hindi / Marathi to English
+        translated = text
+        for d in [DICTIONARY_HI, DICTIONARY_MR]:
+            for en_k, local_v in sorted(d.items(), key=lambda x: len(x[1]), reverse=True):
+                if local_v in translated:
+                    translated = translated.replace(local_v, en_k)
+        translated = re.sub(r"लहरें:\s*\*\*([0-9.]+\s*m)\*\*", r"Waves: **\1**", translated)
+        translated = re.sub(r"लाटा:\s*\*\*([0-9.]+\s*m)\*\*", r"Waves: **\1**", translated)
+        translated = re.sub(r"हवा:\s*\*\*([0-9.]+\s*km/h)\*\*", r"Wind: **\1**", translated)
+        translated = re.sub(r"वारा:\s*\*\*([0-9.]+\s*km/h)\*\*", r"Wind: **\1**", translated)
+        return translated
 
     return text

@@ -155,9 +155,8 @@ export const LocationComparisonModal: React.FC<LocationComparisonModalProps> = (
             {rows.map((row, idx) => (
               <div
                 key={idx}
-                className={`grid grid-cols-3 p-2.5 sm:p-3 text-xs items-center ${
-                  row.highlight ? 'bg-surface-50 font-bold' : 'hover:bg-surface-50/50'
-                }`}
+                className={`grid grid-cols-3 p-2.5 sm:p-3 text-xs items-center ${row.highlight ? 'bg-surface-50 font-bold' : 'hover:bg-surface-50/50'
+                  }`}
               >
                 <div className="font-semibold text-navy-800">
                   {row.label}

@@ -34,6 +34,17 @@ export interface LocationConditions {
   fishingAdvisoryAvailable: boolean;
   fishingAdvisoryZone?: string;
   fishingAdvisorySummary?: string;
+  fishingAdvisoryIsLive?: boolean;
+  fishingAdvisorySource?: string;
+  nearestPortName?: string | null;
+  nearestPortDistanceKm?: number | null;
+  safestPortName?: string | null;
+  safestPortDistanceKm?: number | null;
+  safestPortReason?: string | null;
+  fishingAdvisoryNearestVessel?: string | null;
+  fishingAdvisoryDistanceKm?: number | null;
+  fishingAdvisoryFleetCount?: number | null;
+  fishingAdvisorySpeedKnots?: number | null;
 }
 
 export interface LocationAssessment {
@@ -107,4 +118,14 @@ export interface CoastalPort {
   state: string;
   lat: number;
   lon: number;
+  stateId?: string;
+  direction?: string;
+  bearing?: number | null;
+  distance?: string;
+  distanceKm?: number | null;
+  depth?: string;
+  latDms?: string;
+  lonDms?: string;
+  pfzLat?: number | null;
+  pfzLon?: number | null;
 }

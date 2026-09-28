@@ -31,11 +31,25 @@ class OrcaState(TypedDict, total=False):
     # Agent selection
     required_agents: list[str]
 
+    # Dynamic plan
+    dynamic_plan: dict | None
+
     # Agent results
     weather_data: WeatherData | None
     marine_data: MarineConditions | None
     tide_data: TideData | None
     pfz_data: PFZAdvisory | None
+
+    # Comparison / secondary location data
+    is_comparison_query: bool
+    secondary_location_name: str
+    secondary_latitude: float | None
+    secondary_longitude: float | None
+    secondary_weather_data: WeatherData | None
+    secondary_marine_data: MarineConditions | None
+    secondary_tide_data: TideData | None
+    secondary_risk_assessment: RiskAssessment | None
+    comparison_note: str | None
 
     # Validation
     validation_notes: list[str]

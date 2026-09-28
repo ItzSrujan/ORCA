@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { MapPin, Navigation, Loader2 } from 'lucide-react';
 import L from 'leaflet';
 import type { LocationAssessment, SuggestedLocation } from '../types';
+import { getActiveStateAndCoasts } from '../data/incoisPfz';
 
 interface SimpleMapProps {
   currentLocation: LocationAssessment;
@@ -11,6 +12,7 @@ interface SimpleMapProps {
   onSelectLocation?: (lat: number, lon: number, nameHint?: string) => void;
   onRequestGeolocation?: () => void;
   isLocating?: boolean;
+  heightClass?: string;
 }
 
 export const SimpleMap: React.FC<SimpleMapProps> = ({
@@ -20,6 +22,7 @@ export const SimpleMap: React.FC<SimpleMapProps> = ({
   onSelectLocation,
   onRequestGeolocation,
   isLocating = false,
+  heightClass,
 }) => {
   const { t } = useTranslation();
   const mapContainerRef = useRef<HTMLDivElement>(null);
@@ -39,20 +42,50 @@ export const SimpleMap: React.FC<SimpleMapProps> = ({
     currentLocation.name.toLowerCase().includes('gps') ||
     currentLocation.name.toLowerCase().includes('detected');
 
-  // Helper to re-fit map bounds or flyTo location
+  // Identify active state and all its coastal points from INCOIS PFZ data
+  const {
+    state: activeState,
+    coasts: stateCoasts,
+    activeCoast,
+  } = getActiveStateAndCoasts(
+    curLat,
+    curLon,
+    currentLocation.name || currentLocation.state
+  );
+
+  // Helper to re-fit map bounds including state coast dots and current location
   const updateMapBounds = useCallback(
     (map: L.Map) => {
       try {
+        const points: [number, number][] = [[curLat, curLon]];
+
+        // Include coastal points for the state
+        if (stateCoasts && stateCoasts.length > 0) {
+          stateCoasts.forEach((c) => {
+            if (c.lat && c.lon) {
+              points.push([c.lat, c.lon]);
+            }
+          });
+        }
+
+        // Include PFZ target point if available
+        if (activeCoast?.pfzLat && activeCoast?.pfzLon) {
+          points.push([activeCoast.pfzLat, activeCoast.pfzLon]);
+        }
+
+        // Include suggested alternative if available
         if (suggestedLocation && suggestedLocation.available) {
-          const sugLat = suggestedLocation.coordinates.latitude;
-          const sugLon = suggestedLocation.coordinates.longitude;
-          const bounds = L.latLngBounds([
-            [curLat, curLon],
-            [sugLat, sugLon],
+          points.push([
+            suggestedLocation.coordinates.latitude,
+            suggestedLocation.coordinates.longitude,
           ]);
-          map.fitBounds(bounds.pad(0.35), { animate: true, maxZoom: 13 });
+        }
+
+        if (points.length > 1) {
+          const bounds = L.latLngBounds(points);
+          map.fitBounds(bounds.pad(0.2), { animate: true, maxZoom: 12 });
         } else {
-          map.flyTo([curLat, curLon], Math.max(map.getZoom(), 11), {
+          map.flyTo([curLat, curLon], Math.max(map.getZoom(), 10), {
             duration: 0.8,
             easeLinearity: 0.25,
           });
@@ -61,7 +94,7 @@ export const SimpleMap: React.FC<SimpleMapProps> = ({
         console.warn('updateMapBounds error:', err);
       }
     },
-    [curLat, curLon, suggestedLocation]
+    [curLat, curLon, stateCoasts, activeCoast, suggestedLocation]
   );
 
   // Helper to render all markers & overlays onto the map
@@ -74,7 +107,131 @@ export const SimpleMap: React.FC<SimpleMapProps> = ({
       const layerGroup = layerGroupRef.current;
       layerGroup.clearLayers();
 
-      // 1. Current / Selected / Live Location Marker
+      // 1. Render Coasts of the selected state using dots
+      if (stateCoasts && stateCoasts.length > 0) {
+        stateCoasts.forEach((c) => {
+          if (!c.lat || !c.lon) return;
+
+          const isCurrentCoast =
+            activeCoast &&
+            (activeCoast.id === c.id ||
+              (Math.abs(c.lat - curLat) < 0.05 && Math.abs(c.lon - curLon) < 0.05));
+
+          const dot = L.circleMarker([c.lat, c.lon], {
+            radius: isCurrentCoast ? 7 : 5,
+            fillColor: isCurrentCoast ? '#2563EB' : '#0D9488',
+            color: '#FFFFFF',
+            weight: isCurrentCoast ? 2.5 : 1.5,
+            opacity: 1,
+            fillOpacity: isCurrentCoast ? 1.0 : 0.85,
+            className: 'orca-coast-dot',
+          });
+
+          // Quick Hover Tooltip
+          dot.bindTooltip(
+            `<div style="font-family:sans-serif;font-size:11px;font-weight:700;color:#0F172A;">
+              ⚓ ${c.name} (${c.state})
+            </div>
+            <div style="font-size:10px;color:#0284C7;font-weight:600;">
+              ${c.distance} km @ ${c.bearing}° (${c.direction})
+            </div>`,
+            { direction: 'top', offset: [0, -5], opacity: 0.95 }
+          );
+
+          // Click Popup with Full Telemetry & Selection action
+          const popupContent = document.createElement('div');
+          popupContent.style.fontFamily = 'sans-serif';
+          popupContent.style.fontSize = '12px';
+          popupContent.style.lineHeight = '1.4';
+          popupContent.style.minWidth = '200px';
+          popupContent.innerHTML = `
+            <div style="font-weight:bold;font-size:13px;color:#0F172A;border-bottom:1px solid #E2E8F0;padding-bottom:5px;margin-bottom:6px;display:flex;align-items:center;justify-content:space-between;">
+              <span>⚓ ${c.name}</span>
+              <span style="font-size:10px;background:#F1F5F9;padding:2px 6px;border-radius:4px;color:#475569;font-weight:600;">${c.state}</span>
+            </div>
+            <div style="margin-bottom:3px;color:#334155;font-size:11px;">
+              🧭 <strong>Direction / Bearing:</strong> <span style="color:#0284C7;font-weight:bold;">${c.direction} (${c.bearing}°)</span>
+            </div>
+            <div style="margin-bottom:3px;color:#334155;font-size:11px;">
+              📏 <strong>Distance to PFZ:</strong> <span style="font-weight:bold;">${c.distance} km</span>
+            </div>
+            <div style="margin-bottom:3px;color:#334155;font-size:11px;">
+              🌊 <strong>Depth Range:</strong> <span style="font-weight:bold;">${c.depth} m</span>
+            </div>
+            <div style="color:#64748B;font-size:10px;font-family:monospace;background:#F8FAFC;padding:3px 6px;border-radius:4px;margin-top:5px;border:1px solid #E2E8F0;">
+              PFZ: ${c.latDms || ''}, ${c.lonDms || ''}
+            </div>
+            <button class="orca-select-coast-btn" style="margin-top:8px;width:100%;background:#0284C7;color:#fff;border:none;border-radius:6px;padding:6px 10px;font-size:11px;font-weight:bold;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:4px;transition:background 0.2s;">
+              📍 Set as Active Location
+            </button>
+          `;
+
+          // Attach click handler to select this coast
+          popupContent.querySelector('.orca-select-coast-btn')?.addEventListener('click', () => {
+            onSelectLocationRef.current?.(c.lat, c.lon, `${c.name}, ${c.state}`);
+            map.closePopup();
+          });
+
+          dot.bindPopup(popupContent);
+          layerGroup.addLayer(dot);
+        });
+      }
+
+      // 2. PFZ Hotspot & Connector Line for the active coast (if available)
+      if (activeCoast?.pfzLat && activeCoast?.pfzLon) {
+        // Dashed marine connector line
+        const pfzLine = L.polyline(
+          [
+            [curLat, curLon],
+            [activeCoast.pfzLat, activeCoast.pfzLon],
+          ],
+          {
+            color: '#0284C7',
+            dashArray: '6, 8',
+            weight: 2.5,
+            opacity: 0.85,
+          }
+        );
+        layerGroup.addLayer(pfzLine);
+
+        // PFZ Hotspot Icon
+        const pfzIcon = L.divIcon({
+          className: 'orca-pfz-hotspot',
+          html: `
+            <div style="position:relative;display:flex;flex-direction:column;align-items:center;pointer-events:auto;cursor:pointer;">
+              <div style="background:#0284C7;color:#FFFFFF;font-size:10px;font-weight:700;padding:2px 8px;border-radius:6px;box-shadow:0 2px 5px rgba(0,0,0,0.3);white-space:nowrap;margin-bottom:4px;border:1px solid rgba(255,255,255,0.7);display:flex;align-items:center;gap:4px;">
+                <span>🐟</span>
+                <span>PFZ (${activeCoast.distance} km)</span>
+              </div>
+              <div style="width:14px;height:14px;background:#0369A1;border:2px solid #FFFFFF;border-radius:50%;box-shadow:0 0 0 2px rgba(3,105,161,0.5);"></div>
+            </div>
+          `,
+          iconSize: [130, 42],
+          iconAnchor: [65, 38],
+        });
+
+        const pfzMarker = L.marker([activeCoast.pfzLat, activeCoast.pfzLon], {
+          icon: pfzIcon,
+        }).bindPopup(`
+          <div style="font-family:sans-serif;font-size:12px;line-height:1.4;">
+            <strong style="color:#0284C7;font-size:13px;">🐟 INCOIS Potential Fishing Zone (PFZ)</strong>
+            <div style="margin-top:4px;font-size:11px;color:#1E293B;">
+              Target sector for <strong>${activeCoast.name}</strong> (${activeCoast.state})
+            </div>
+            <div style="margin-top:4px;color:#475569;font-size:11px;">
+              🧭 Bearing: <strong>${activeCoast.bearing}° (${activeCoast.direction})</strong><br/>
+              📏 Distance from coast: <strong>${activeCoast.distance} km</strong><br/>
+              🌊 Water Depth: <strong>${activeCoast.depth} m</strong>
+            </div>
+            <div style="color:#64748B;font-size:10px;font-family:monospace;background:#F8FAFC;padding:3px 6px;border-radius:4px;margin-top:5px;border:1px solid #E2E8F0;">
+              ${activeCoast.latDms || ''}, ${activeCoast.lonDms || ''}
+            </div>
+          </div>
+        `);
+        layerGroup.addLayer(pfzMarker);
+      }
+
+      // 3. Current / Selected Location Marker ("and also in the location it is")
       const currentIcon = L.divIcon({
         className: isLive ? 'orca-live-pin' : 'orca-target-pin',
         html: isLive
@@ -109,16 +266,16 @@ export const SimpleMap: React.FC<SimpleMapProps> = ({
       }).bindPopup(`
         <div style="font-family:sans-serif;font-size:12px;line-height:1.4;">
           <strong style="font-size:13px;color:#0F172A;">${
-            isLive ? '🛰️ Live GPS Location' : '📍 ' + currentLocation.name
+            isLive ? '🛰️ ' + t('map.liveGpsPosition', 'Live GPS Location') : '📍 ' + currentLocation.name
           }</strong>
           <div style="color:#64748B;font-size:11px;margin-top:2px;">
             Lat: ${curLat.toFixed(4)}° | Lon: ${curLon.toFixed(4)}°
           </div>
           <div style="margin-top:4px;">
-            Risk: <span style="font-weight:bold;color:#0369A1;">${currentLocation.riskLevel}</span>
+            ${t('comparison.overallRisk', 'Risk')}: <span style="font-weight:bold;color:#0369A1;">${currentLocation.riskLevel}</span>
           </div>
           <div style="margin-top:4px;font-size:10px;color:#94A3B8;">
-            💡 Drag pin or click map to relocate
+            💡 ${t('map.mapHint', 'Drag pin or click map to relocate')}
           </div>
         </div>
       `);
@@ -134,7 +291,7 @@ export const SimpleMap: React.FC<SimpleMapProps> = ({
 
       layerGroup.addLayer(currentMarker);
 
-      // 2. Suggested Location Marker (if available)
+      // 4. Suggested Alternative Location Marker (if available)
       if (suggestedLocation && suggestedLocation.available) {
         const sugLat = suggestedLocation.coordinates.latitude;
         const sugLon = suggestedLocation.coordinates.longitude;
@@ -144,7 +301,7 @@ export const SimpleMap: React.FC<SimpleMapProps> = ({
           html: `
             <div style="position:relative;display:flex;flex-direction:column;align-items:center;pointer-events:auto;">
               <div style="background:#047857;color:#FFFFFF;font-size:10px;font-weight:700;padding:2px 8px;border-radius:6px;box-shadow:0 2px 4px rgba(0,0,0,0.35);white-space:nowrap;margin-bottom:4px;border:1px solid rgba(255,255,255,0.5)">
-                ${suggestedLocation.name} (Suggested)
+                ${suggestedLocation.name} (${t('comparison.suggested', 'Suggested')})
               </div>
               <div style="width:18px;height:18px;background:#059669;border:3px solid #FFFFFF;border-radius:50%;box-shadow:0 0 0 3px rgba(5,150,105,0.4)"></div>
             </div>
@@ -154,38 +311,17 @@ export const SimpleMap: React.FC<SimpleMapProps> = ({
         });
 
         const sugMarker = L.marker([sugLat, sugLon], { icon: suggestedIcon }).bindPopup(
-          `<strong>${suggestedLocation.name}</strong><br/>Lower Risk Alternative<br/>${suggestedLocation.distanceKm} km away`
+          `<strong>${suggestedLocation.name}</strong><br/>${t('suggested.badge', 'Lower Risk Alternative')}<br/>${suggestedLocation.distanceKm} km away`
         );
         layerGroup.addLayer(sugMarker);
       }
 
-      // 3. Advisory Zone Circle
-      const advisoryCircle = L.circle([curLat - 0.1, curLon + 0.1], {
-        radius: 12000,
-        color: '#059669',
-        fillColor: '#10B981',
-        fillOpacity: 0.14,
-        weight: 1.5,
-        dashArray: '5, 5',
-      }).bindPopup('<strong>Potential Fishing Advisory Zone</strong><br/>Active PFZ sector');
-      layerGroup.addLayer(advisoryCircle);
-
-      // 4. Caution / Swell Area Circle
-      const cautionCircle = L.circle([curLat - 0.2, curLon - 0.05], {
-        radius: 15000,
-        color: '#D97706',
-        fillColor: '#F59E0B',
-        fillOpacity: 0.09,
-        weight: 1.5,
-      }).bindPopup('<strong>Offshore Swell Area</strong><br/>Exercise heightened caution');
-      layerGroup.addLayer(cautionCircle);
-
       updateMapBounds(map);
     },
-    [curLat, curLon, isLive, currentLocation, suggestedLocation, updateMapBounds]
+    [curLat, curLon, isLive, currentLocation, suggestedLocation, stateCoasts, activeCoast, updateMapBounds, t]
   );
 
-  // 1. Initialize Map ONCE on Mount
+  // Initialize Map ONCE on Mount
   useEffect(() => {
     if (!mapContainerRef.current) return;
 
@@ -196,17 +332,29 @@ export const SimpleMap: React.FC<SimpleMapProps> = ({
 
     const map = L.map(mapContainerRef.current, {
       center: [curLat, curLon],
-      zoom: 11,
+      zoom: 10,
       zoomControl: true,
       attributionControl: false,
     });
     mapInstanceRef.current = map;
 
-    // OpenStreetMap maritime tile layer
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-      maxZoom: 18,
-      attribution: '&copy; OpenStreetMap',
-    }).addTo(map);
+    // 1. High-resolution Satellite Imagery (Esri World Imagery)
+    L.tileLayer(
+      'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
+      {
+        maxZoom: 19,
+        attribution: 'Tiles &copy; Esri, Maxar, Earthstar Geographics',
+      }
+    ).addTo(map);
+
+    // 2. English Place and Country Names Overlay (Esri World Boundaries and Places)
+    L.tileLayer(
+      'https://server.arcgisonline.com/ArcGIS/rest/services/Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}',
+      {
+        maxZoom: 19,
+        attribution: 'Labels &copy; Esri (English Reference)',
+      }
+    ).addTo(map);
 
     // Click on map to set location!
     map.on('click', (e: L.LeafletMouseEvent) => {
@@ -248,7 +396,7 @@ export const SimpleMap: React.FC<SimpleMapProps> = ({
     };
   }, []); // Run once on mount
 
-  // 2. Re-render markers whenever location or suggested props change
+  // Re-render markers whenever location, suggested props, or active state changes
   useEffect(() => {
     if (mapInstanceRef.current) {
       renderMarkers(mapInstanceRef.current);
@@ -258,11 +406,14 @@ export const SimpleMap: React.FC<SimpleMapProps> = ({
   return (
     <div className="bg-white border border-surface-300 rounded-2xl p-4 shadow-xs space-y-2.5">
       <div className="flex items-center justify-between flex-wrap gap-2">
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 flex-wrap">
           <MapPin className="w-4 h-4 text-marine-600 shrink-0" />
           <h2 className="text-2xs font-bold uppercase tracking-wider text-navy-700">
             {t('map.title')}
           </h2>
+          <span className="text-2xs font-bold px-2 py-0.5 rounded-full bg-teal-50 border border-teal-200 text-teal-800">
+            {activeState.displayName}: {stateCoasts.length} Coasts
+          </span>
           <span className="text-2xs font-mono text-surface-500 bg-surface-100 px-2 py-0.5 rounded border border-surface-200 hidden sm:inline-block">
             {curLat.toFixed(3)}°N, {curLon.toFixed(3)}°E
           </span>
@@ -286,53 +437,64 @@ export const SimpleMap: React.FC<SimpleMapProps> = ({
               ) : (
                 <Navigation className="w-3.5 h-3.5 text-current" />
               )}
-              <span>{isLive ? 'Live GPS Active' : 'Live GPS'}</span>
+              <span>{isLive ? t('map.liveGpsActive', 'Live GPS Active') : t('map.liveGps', 'Live GPS')}</span>
             </button>
           )}
         </div>
       </div>
 
       {/* Map Container Wrapper */}
-      <div className="w-full h-[260px] sm:h-[300px] lg:h-[350px] rounded-xl border border-surface-300 overflow-hidden relative">
+      <div className={`w-full ${heightClass || 'h-[280px] sm:h-[320px] lg:h-[380px]'} rounded-xl border border-surface-300 overflow-hidden relative shadow-inner`}>
         <div
           ref={mapContainerRef}
           className="w-full h-full leaflet-container"
           style={{ width: '100%', height: '100%', minHeight: '100%', position: 'relative', zIndex: 0 }}
         />
 
+        {/* Floating Layer Indicator Badge */}
+        <div className="absolute top-2 right-2 z-[400] bg-navy-950/80 backdrop-blur-xs text-white text-3xs font-medium px-2 py-0.5 rounded shadow-xs border border-white/20 uppercase tracking-wider pointer-events-none">
+          🛰️ Satellite View
+        </div>
+
         {/* Floating Hint Overlay on Map */}
         <div className="absolute bottom-2 left-2 z-[400] bg-navy-950/85 backdrop-blur-xs text-white text-2xs px-2.5 py-1 rounded-md shadow-xs pointer-events-none flex items-center gap-1.5 border border-white/20">
           <span>💡</span>
-          <span>Click map or drag pin to set location</span>
+          <span>Click any coastal dot to inspect or select that harbor</span>
         </div>
       </div>
 
       {/* Map Legend */}
-      <div className="flex flex-wrap items-center gap-3 pt-1 text-2xs text-surface-600 font-medium">
+      <div className="flex flex-wrap items-center gap-3.5 pt-1 text-2xs text-surface-600 font-medium">
         <div className="flex items-center gap-1.5">
           {isLive ? (
             <span className="w-2.5 h-2.5 rounded-full bg-blue-600 border border-white ring-2 ring-blue-300" />
           ) : (
             <span className="w-2.5 h-2.5 rounded-full bg-navy-900 border border-white" />
           )}
-          <span>{isLive ? 'Live GPS Position' : t('map.currentLocation')}</span>
+          <span>{isLive ? t('map.liveGpsPosition', 'Live GPS Position') : t('map.currentLocation')}</span>
         </div>
+
+        <div className="flex items-center gap-1.5">
+          <span className="w-2.5 h-2.5 rounded-full bg-teal-600 border border-white ring-1 ring-teal-400" />
+          <span>{activeState.displayName} Coasts ({stateCoasts.length} dots)</span>
+        </div>
+
+        {activeCoast?.pfzLat && (
+          <div className="flex items-center gap-1.5">
+            <span className="w-2.5 h-2.5 rounded-full bg-sky-600 border border-white ring-1 ring-sky-300" />
+            <span>INCOIS PFZ Hotspot ({activeCoast.distance} km)</span>
+          </div>
+        )}
+
         {suggestedLocation?.available && (
           <div className="flex items-center gap-1.5">
             <span className="w-2.5 h-2.5 rounded-full bg-emerald-600 border border-white" />
             <span>{t('map.suggestedLocation')}</span>
           </div>
         )}
-        <div className="flex items-center gap-1.5">
-          <span className="w-2.5 h-2.5 rounded-full bg-emerald-500/40 border border-emerald-600" />
-          <span>{t('map.advisoryZone')}</span>
-        </div>
-        <div className="flex items-center gap-1.5">
-          <span className="w-2.5 h-2.5 rounded-full bg-amber-500/40 border border-amber-600" />
-          <span>{t('map.cautionArea')}</span>
-        </div>
       </div>
     </div>
   );
 };
+
 

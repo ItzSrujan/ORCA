@@ -4,13 +4,22 @@
     "subtitle": "Ocean Risk & Coordinated Advisory",
     "tagline": "Marine Decision Support"
   },
+  "common": {
+    "readMore": "Read more",
+    "showLess": "Show less"
+  },
   "nav": {
     "home": "Home",
     "map": "Map",
     "ask": "Ask ORCA",
     "selectLanguage": "Language",
     "changeLocation": "Change Location",
-    "refresh": "Refresh"
+    "refresh": "Refresh",
+    "tacticalCockpit": "Tactical Cockpit",
+    "advisoryConsole": "Ask ORCA AI",
+    "telemetryMatrix": "Live Telemetry",
+    "nauticalMap": "Ocean Chart",
+    "allView": "All in One"
   },
   "location": {
     "currentTitle": "YOUR CURRENT LOCATION",
@@ -20,12 +29,14 @@
     "detecting": "Detecting your location...",
     "permissionPrompt": "Location access is needed to analyze conditions near you.",
     "allowAccess": "Enable Location",
+    "chooseLocation": "Choose Location",
     "searchLocation": "Search Location",
     "selectPort": "Select Coastal Port",
     "searchPlaceholder": "Search city, harbor or coordinates...",
     "popularPorts": "Major Fishing Harbors",
     "distanceAway": "{{distance}} km away",
-    "close": "Close"
+    "close": "Close",
+    "liveGps": "Live GPS"
   },
   "risk": {
     "safe": "SAFE TO PROCEED",
@@ -60,7 +71,12 @@
     "statusRough": "Rough seas",
     "statusStrong": "Strong current",
     "statusNormal": "Normal flow",
-    "statusWarm": "Warm waters"
+    "statusWarm": "Warm waters",
+    "statusCalm": "Calm",
+    "telemetryMissing": "Telemetry missing",
+    "normalCycle": "Normal cycle",
+    "zoneActive": "Zone Active",
+    "noAdvisory": "No Advisory"
   },
   "suggested": {
     "title": "BETTER CONDITIONS NEARBY",
@@ -91,7 +107,11 @@
     "currentLocation": "Current Location",
     "suggestedLocation": "Suggested Location",
     "advisoryZone": "Active Advisory Zone",
-    "cautionArea": "Caution / Swell Area"
+    "cautionArea": "Caution / Swell Area",
+    "liveGpsActive": "Live GPS Active",
+    "liveGps": "Live GPS",
+    "liveGpsPosition": "Live GPS Position",
+    "mapHint": "Click map or drag pin to set location"
   },
   "ask": {
     "title": "ASK ORCA",
@@ -100,11 +120,25 @@
     "thinking": "Consulting marine intelligence...",
     "examplesTitle": "Common Questions:",
     "example1": "Is it safe to go fishing today?",
-    "example2": "What will wave heights be this evening?",
-    "example3": "Are there any fishing advisories near here?",
-    "example4": "Suggest places to fish based on the map",
+    "example2": "What is the wave height and swell right now?",
+    "example3": "Can I go out tonight in a small wooden boat?",
+    "example4": "What fish species are active near here today?",
+    "example5": "When is high tide and the best time to leave harbor?",
+    "example6": "Is there any storm, rain, or cyclone warning?",
+    "example7": "Suggest sheltered ports or calmer spots to fish",
+    "example8": "Compare current harbor with nearby ports",
+    "example9": "How strong are ocean currents and wind gusts?",
+    "example10": "What safety equipment is mandatory before leaving port?",
+    "example11": "Compare Mumbai vs Alibaug for fishing tomorrow morning",
+    "example12": "Can small fiber boats navigate safely in current swell?",
+    "example13": "What is the sea surface temperature and fishing productivity?",
+    "example14": "Give me a complete pre-departure marine briefing",
     "responseTitle": "ORCA Marine Advice",
-    "evidenceTitle": "Evidence Checked"
+    "evidenceTitle": "Evidence Checked",
+    "translating": "Translating...",
+    "analyzing": "Analyzing marine telemetry for",
+    "evaluating": "Evaluating waves, wind velocity, tidal currents, and spatial map data...",
+    "showOverview": "Show Overview"
   },
   "howAnalyzed": {
     "title": "How ORCA analyzed this",

@@ -38,7 +38,7 @@ class ParsedIntent(BaseModel):
 
     primary_intent: str = Field(
         default="general_marine_query",
-        description="One of: fishing_safety, marine_conditions, fishing_zone, weather_check, tide_check, general_marine_query",
+        description="One of: fishing_safety, marine_conditions, fishing_zone, weather_check, tide_check, general_marine_query, comparison, marine_briefing, warning_check",
     )
     location: str = Field(default="")
     exclude_location: str = Field(default="")
@@ -47,6 +47,15 @@ class ParsedIntent(BaseModel):
     longitude: float | None = None
     time: str = Field(default="current", description="current, today, tomorrow, tomorrow_morning, etc.")
     required_agents: list[str] = Field(default_factory=lambda: ["weather", "marine"])
+
+    # ── Dynamic orchestration fields ───────────────────────────
+    objective: str = Field(default="", description="What the user wants to achieve (e.g. 'fishing', 'navigation', 'safety_check')")
+    constraints: list[str] = Field(default_factory=list, description="User constraints (e.g. 'avoid rough seas', 'small boat')")
+    required_information: list[str] = Field(default_factory=list, description="What data is needed (e.g. 'weather', 'wave_height', 'PFZ', 'tide')")
+    output_type: str = Field(default="recommendation", description="recommendation, comparison, ranked_locations, briefing, warning_report, conditions_report")
+    secondary_location: str = Field(default="", description="Second location for comparison queries")
+    secondary_latitude: float | None = None
+    secondary_longitude: float | None = None
 
 
 class ExecutionStep(BaseModel):

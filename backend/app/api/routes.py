@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import re
+
 from fastapi import APIRouter, HTTPException
 
 from app.core.config import get_settings
@@ -61,6 +63,20 @@ async def process_query(request: QueryRequest):
         intent = result.get("parsed_intent", ParsedIntent())
         risk = result.get("risk_assessment", RiskAssessment())
 
+        # Ensure answer / recommendation is in the requested language
+        req_lang = (request.language or "en").lower().strip()
+        recommendation = result.get("recommendation", "")
+        if req_lang in ("hi", "hindi", "mr", "marathi") and recommendation:
+            has_devanagari = bool(re.search(r"[\u0900-\u097F]", recommendation))
+            if not has_devanagari:
+                from app.services.translation_service import translate_text
+                recommendation = await translate_text(recommendation, target_lang=req_lang)
+        elif req_lang in ("en", "english") and recommendation:
+            has_devanagari = bool(re.search(r"[\u0900-\u097F]", recommendation))
+            if has_devanagari:
+                from app.services.translation_service import translate_text
+                recommendation = await translate_text(recommendation, target_lang="en")
+
         response = OrcaResponse(
             query=request.query,
             intent=intent,
@@ -72,7 +88,7 @@ async def process_query(request: QueryRequest):
                 pfz=result.get("pfz_data"),
             ),
             risk_assessment=risk,
-            recommendation=result.get("recommendation", ""),
+            recommendation=recommendation,
             evidence=result.get("evidence", []),
             errors=result.get("errors", []),
             llm_provider=result.get("llm_provider") or get_settings().llm_provider,
@@ -89,8 +105,11 @@ async def process_query(request: QueryRequest):
         raise HTTPException(status_code=500, detail=f"Query processing failed: {exc}")
 
 
-# ── Coastal Harbor & Alternative Pairing Directory ───────────
-from app.services.coastal_service import COASTAL_PORT_PAIRS, calc_distance_km as _calc_distance_km
+from app.services.coastal_service import (
+    COASTAL_PORT_PAIRS,
+    calc_distance_km as _calc_distance_km,
+    find_closest_port,
+)
 
 
 
@@ -127,11 +146,12 @@ async def analyze_location(request: dict):
     try:
         graph = _get_graph()
         initial_state = {
-            "original_query": f"Marine conditions and safety near {loc_name}",
+            "original_query": f"Complete marine conditions, tide, and fishing advisory near {loc_name}",
             "input_latitude": lat,
             "input_longitude": lon,
             "location_name": loc_name,
             "language": lang,
+            "required_agents": ["weather", "marine", "tide", "pfz"],
             "execution_trace": [],
             "errors": [],
         }
@@ -181,12 +201,18 @@ async def analyze_location(request: dict):
 
         recommendation = result.get("recommendation") or headline
 
-        # Translate headline and reason if non-English
+        # Translate headline, reason, and recommendation
         if lang in ("hi", "mr"):
             headline = await translate_text(headline, target_lang=lang)
             reason = await translate_text(reason, target_lang=lang)
+            recommendation = await translate_text(recommendation, target_lang=lang)
             wind_status = await translate_text(wind_status, target_lang=lang)
             wave_status = await translate_text(wave_status, target_lang=lang)
+        elif lang in ("en", "english"):
+            if re.search(r"[\u0900-\u097F]", recommendation):
+                recommendation = await translate_text(recommendation, target_lang="en")
+            if re.search(r"[\u0900-\u097F]", headline):
+                headline = await translate_text(headline, target_lang="en")
 
         return {
             "name": loc_name or result.get("location_name") or f"Coordinates ({lat:.2f}°N, {lon:.2f}°E)",
@@ -215,6 +241,17 @@ async def analyze_location(request: dict):
                 "fishingAdvisoryAvailable": bool(pfz and pfz.available),
                 "fishingAdvisoryZone": getattr(pfz, "zone", "") or "",
                 "fishingAdvisorySummary": getattr(pfz, "summary", "") or "",
+                "fishingAdvisoryIsLive": bool(getattr(pfz, "is_live", False)),
+                "fishingAdvisorySource": getattr(pfz, "source", "") or "INCOIS Coastal Safety & Marine Ports Directory",
+                "nearestPortName": getattr(pfz, "nearest_port_name", None),
+                "nearestPortDistanceKm": getattr(pfz, "nearest_port_distance_km", None),
+                "safestPortName": getattr(pfz, "safest_port_name", None),
+                "safestPortDistanceKm": getattr(pfz, "safest_port_distance_km", None),
+                "safestPortReason": getattr(pfz, "safest_port_reason", None),
+                "fishingAdvisoryNearestVessel": getattr(pfz, "nearest_vessel_name", None),
+                "fishingAdvisoryDistanceKm": getattr(pfz, "distance_to_vessel_km", None),
+                "fishingAdvisoryFleetCount": getattr(pfz, "active_fleet_count", None),
+                "fishingAdvisorySpeedKnots": getattr(pfz, "average_speed_knots", None),
             },
         }
 
@@ -236,15 +273,9 @@ async def compare_locations(request: dict):
     lon = float(request.get("longitude", 87.5074))
     lang = (request.get("language") or "en").lower()
 
-    # Find closest coastal port pair or compute nearby sheltered point
-    best_pair = COASTAL_PORT_PAIRS[0]
-    min_dist = float("inf")
-    for pair in COASTAL_PORT_PAIRS:
-        d = (pair["lat"] - lat) ** 2 + (pair["lon"] - lon) ** 2
-        if d < min_dist:
-            min_dist = d
-            best_pair = pair
-
+    # Find closest coastal port and its PFZ-backed alternative
+    best_pair = find_closest_port(lat, lon)
+    min_dist = (best_pair["lat"] - lat) ** 2 + (best_pair["lon"] - lon) ** 2
     alt_lat = best_pair["alt_lat"]
     alt_lon = best_pair["alt_lon"]
     alt_name = best_pair["alt_name"]
@@ -393,6 +424,65 @@ async def translate_endpoint(request: dict):
         "original_text": text,
         "translated_text": translated,
         "target_language": target_lang,
+    }
+
+
+@router.post("/api/settings/hf-token")
+async def update_hf_token(request: dict):
+    """Update Hugging Face token, verify connectivity, and update backend/.env."""
+    import re
+    from pathlib import Path
+    import requests
+    from app.core.config import get_settings
+
+    token = (request.get("token") or "").strip()
+    endpoint_url = (request.get("endpoint_url") or "").strip()
+    model = (request.get("model") or "").strip()
+
+    if not token:
+        raise HTTPException(status_code=400, detail="Token cannot be empty")
+
+    # 1. Test token against Hugging Face
+    whoami_url = "https://huggingface.co/api/whoami-v2"
+    headers = {"Authorization": f"Bearer {token}"}
+    try:
+        res = requests.get(whoami_url, headers=headers, timeout=10)
+        if res.status_code == 401:
+            return {"valid": False, "error": "Token is expired or invalid (HTTP 401)."}
+        if res.status_code != 200:
+            return {"valid": False, "error": f"Hugging Face returned HTTP {res.status_code}."}
+        user_data = res.json()
+        username = user_data.get("name", "User")
+    except Exception as exc:
+        return {"valid": False, "error": f"Connection to Hugging Face failed: {exc}"}
+
+    # 2. Update .env file
+    env_path = Path(__file__).resolve().parent.parent.parent / ".env"
+    if env_path.exists():
+        content = env_path.read_text(encoding="utf-8")
+        if "HF_TOKEN=" in content:
+            content = re.sub(r"^HF_TOKEN=.*$", f"HF_TOKEN={token}", content, flags=re.MULTILINE)
+        else:
+            content += f"\nHF_TOKEN={token}"
+        if endpoint_url:
+            if "HF_ENDPOINT_URL=" in content:
+                content = re.sub(r"^HF_ENDPOINT_URL=.*$", f"HF_ENDPOINT_URL={endpoint_url}", content, flags=re.MULTILINE)
+            else:
+                content += f"\nHF_ENDPOINT_URL={endpoint_url}"
+        if model:
+            if "HF_MODEL=" in content:
+                content = re.sub(r"^HF_MODEL=.*$", f"HF_MODEL={model}", content, flags=re.MULTILINE)
+            else:
+                content += f"\nHF_MODEL={model}"
+        env_path.write_text(content, encoding="utf-8")
+
+    # 3. Reload settings in memory
+    get_settings(reload=True)
+
+    return {
+        "valid": True,
+        "username": username,
+        "message": f"Successfully authenticated as {username}! Live Hugging Face generation is now active.",
     }
 
 

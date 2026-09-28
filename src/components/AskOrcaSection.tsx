@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Send, HelpCircle, Loader2, CheckCircle2, ShieldCheck, AlertTriangle, Globe, Sparkles, Info, AlertCircle } from 'lucide-react';
+import { Send, HelpCircle, Loader2, CheckCircle2, ShieldCheck, AlertTriangle, Sparkles, Info, AlertCircle } from 'lucide-react';
 import { apiService } from '../services/api';
 import type { LocationAssessment, AskOrcaResponse } from '../types';
 
@@ -68,15 +68,49 @@ export const AskOrcaSection: React.FC<AskOrcaSectionProps> = ({ currentLocation 
   const [displayedAnswer, setDisplayedAnswer] = useState<string>('');
   const [answerLang, setAnswerLang] = useState<string>('en');
   const [isTranslating, setIsTranslating] = useState<boolean>(false);
+  const [newTokenInput, setNewTokenInput] = useState('');
+  const [isSavingToken, setIsSavingToken] = useState(false);
+  const [tokenFeedback, setTokenFeedback] = useState<{ success: boolean; msg: string } | null>(null);
 
   const currentLang = i18n.resolvedLanguage || i18n.language || 'en';
 
   const examples = [
     t('ask.example1'),
-    t('ask.example4'),
     t('ask.example2'),
     t('ask.example3'),
+    t('ask.example4'),
+    t('ask.example5'),
+    t('ask.example6'),
+    t('ask.example7'),
+    t('ask.example8'),
+    t('ask.example9'),
+    t('ask.example10'),
+    t('ask.example11'),
+    t('ask.example12'),
+    t('ask.example13'),
+    t('ask.example14'),
   ];
+
+  const handleActivateToken = async () => {
+    if (!newTokenInput.trim()) return;
+    setIsSavingToken(true);
+    setTokenFeedback(null);
+    try {
+      const res = await apiService.updateHfToken(newTokenInput.trim());
+      if (res.valid) {
+        setTokenFeedback({ success: true, msg: res.message || 'Token verified and activated!' });
+        setTimeout(() => {
+          handleAsk();
+        }, 1200);
+      } else {
+        setTokenFeedback({ success: false, msg: res.error || 'Token verification failed.' });
+      }
+    } catch (err: any) {
+      setTokenFeedback({ success: false, msg: err?.message || 'Failed to update token.' });
+    } finally {
+      setIsSavingToken(false);
+    }
+  };
 
   const handleAsk = async (textToAsk?: string) => {
     const q = textToAsk || query;
@@ -90,6 +124,7 @@ export const AskOrcaSection: React.FC<AskOrcaSectionProps> = ({ currentLocation 
         query: q,
         latitude: currentLocation.coordinates.latitude,
         longitude: currentLocation.coordinates.longitude,
+        locationName: currentLocation.name,
         language: currentLang,
       });
       setResponse(res);
@@ -180,15 +215,16 @@ export const AskOrcaSection: React.FC<AskOrcaSectionProps> = ({ currentLocation 
         <span className="text-2xs font-bold uppercase tracking-wider text-surface-400 block mb-1.5">
           {t('ask.examplesTitle')}
         </span>
-        <div className="flex flex-wrap gap-1.5">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5">
           {examples.map((ex, idx) => (
             <button
               key={idx}
               type="button"
               onClick={() => handleAsk(ex)}
-              className="text-2xs sm:text-xs text-navy-700 bg-surface-100 hover:bg-surface-200 border border-surface-200 rounded-lg px-2.5 py-1 text-left transition-colors"
+              className="text-2xs sm:text-xs text-navy-800 bg-surface-50 hover:bg-marine-50 hover:border-marine-300 border border-surface-200 rounded-lg px-2.5 py-1.5 text-left transition-all flex items-start gap-1.5 group cursor-pointer shadow-2xs"
             >
-              "{ex}"
+              <span className="text-marine-500 font-bold group-hover:text-marine-700 shrink-0 mt-0.5">›</span>
+              <span className="line-clamp-2">{ex}</span>
             </button>
           ))}
         </div>
@@ -226,67 +262,96 @@ export const AskOrcaSection: React.FC<AskOrcaSectionProps> = ({ currentLocation 
                 )}
               </div>
 
-              {/* Translation Controls */}
-              <div className="flex items-center gap-1 bg-white/90 border border-marine-200 rounded-lg p-0.5 shrink-0">
-                <Globe className="w-3 h-3 text-marine-600 ml-1 shrink-0" />
-                <button
-                  type="button"
-                  onClick={() => translateAnswerTo('en')}
-                  disabled={isTranslating}
-                  className={`px-1.5 py-0.5 text-2xs rounded font-medium transition-colors ${
-                    answerLang === 'en'
-                      ? 'bg-marine-600 text-white font-bold'
-                      : 'text-navy-700 hover:bg-marine-100'
-                  }`}
-                  title="Translate to English"
-                >
-                  EN
-                </button>
-                <button
-                  type="button"
-                  onClick={() => translateAnswerTo('hi')}
-                  disabled={isTranslating}
-                  className={`px-1.5 py-0.5 text-2xs rounded font-medium transition-colors ${
-                    answerLang === 'hi'
-                      ? 'bg-marine-600 text-white font-bold'
-                      : 'text-navy-700 hover:bg-marine-100'
-                  }`}
-                  title="Translate to Hindi"
-                >
-                  हिन्दी
-                </button>
-                <button
-                  type="button"
-                  onClick={() => translateAnswerTo('mr')}
-                  disabled={isTranslating}
-                  className={`px-1.5 py-0.5 text-2xs rounded font-medium transition-colors ${
-                    answerLang === 'mr'
-                      ? 'bg-marine-600 text-white font-bold'
-                      : 'text-navy-700 hover:bg-marine-100'
-                  }`}
-                  title="Translate to Marathi"
-                >
-                  मराठी
-                </button>
-              </div>
+              {isTranslating && (
+                <span className="inline-flex items-center gap-1 text-2xs text-marine-600 font-medium animate-pulse ml-1">
+                  <Loader2 className="w-3 h-3 animate-spin" />
+                  <span>Translating...</span>
+                </span>
+              )}
             </div>
 
-            {response.errors && response.errors.some((e) => e.includes('402') || e.includes('credits depleted') || e.includes('Payment Required')) && (
+            {response.isLlmActive ? (
+              <div className="bg-emerald-50 border border-emerald-300/80 rounded-lg px-2.5 py-1 text-2xs text-emerald-900 flex items-center justify-between">
+                <span className="flex items-center gap-1.5 font-medium">
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                  Live Hugging Face AI Generation
+                </span>
+                <span className="font-mono text-3xs text-emerald-800 bg-emerald-100/60 px-1.5 py-0.5 rounded">
+                  {response.llmModel || 'Hugging Face'}
+                </span>
+              </div>
+            ) : response.errors && response.errors.some((e) => e.includes('401') || e.includes('expired') || e.includes('Unauthorized')) ? (
+              <div className="bg-amber-50/90 border border-amber-300 rounded-lg p-2.5 text-2xs text-amber-900 flex items-start gap-2">
+                <AlertCircle className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
+                <div className="space-y-1.5 leading-snug flex-1">
+                  <div>
+                    <span className="font-bold block text-amber-950">
+                      Hugging Face Token Notice ({response.llmModel || 'Edge0/Edge0-35B-A3B-preview'})
+                    </span>
+                    <span className="text-amber-900 block mt-0.5">
+                      Your Hugging Face User Access Token is expired or invalid (HTTP 401). Output is currently generated via ORCA's live multi-agent telemetry engine.
+                    </span>
+                  </div>
+
+                  <div className="pt-1 flex flex-col sm:flex-row gap-1.5 items-stretch sm:items-center">
+                    <input
+                      type="password"
+                      placeholder="Paste active HF Token (hf_...)"
+                      value={newTokenInput}
+                      onChange={(e) => setNewTokenInput(e.target.value)}
+                      className="px-2.5 py-1 text-2xs rounded-lg border border-amber-300 bg-white text-navy-900 focus:outline-none focus:ring-1 focus:ring-amber-500 font-mono flex-1 placeholder:text-surface-400"
+                    />
+                    <button
+                      type="button"
+                      onClick={handleActivateToken}
+                      disabled={isSavingToken || !newTokenInput.trim()}
+                      className="px-3 py-1 text-2xs font-bold rounded-lg bg-amber-700 hover:bg-amber-800 disabled:opacity-50 text-white transition-colors shrink-0 flex items-center justify-center gap-1 cursor-pointer"
+                    >
+                      {isSavingToken ? (
+                        <>
+                          <Loader2 className="w-3 h-3 animate-spin" />
+                          <span>Verifying...</span>
+                        </>
+                      ) : (
+                        <span>Activate Live LM</span>
+                      )}
+                    </button>
+                  </div>
+                  {tokenFeedback && (
+                    <div className={`text-3xs font-semibold ${tokenFeedback.success ? 'text-emerald-800' : 'text-rose-800'}`}>
+                      {tokenFeedback.msg}
+                    </div>
+                  )}
+                  <span className="text-3xs text-amber-800 block">
+                    You can generate a free token at <a href="https://huggingface.co/settings/tokens" target="_blank" rel="noreferrer" className="underline font-semibold text-marine-700">huggingface.co/settings/tokens</a>.
+                  </span>
+                </div>
+              </div>
+            ) : response.errors && response.errors.some((e) => e.includes('not hosted') || e.includes('Serverless') || e.includes('StopIteration')) ? (
+              <div className="bg-blue-50/90 border border-blue-300 rounded-lg p-2.5 text-2xs text-blue-900 flex items-start gap-2">
+                <AlertCircle className="w-4 h-4 text-blue-600 shrink-0 mt-0.5" />
+                <div className="space-y-0.5 leading-snug">
+                  <span className="font-bold block text-blue-950">
+                    Model Serverless Status ({response.llmModel || 'Edge0/Edge0-35B-A3B-preview'})
+                  </span>
+                  <span className="text-blue-900 block">
+                    This model is not hosted on Hugging Face free serverless inference. If you have deployed it to a dedicated endpoint, set <code className="bg-blue-100 px-1 rounded font-mono">HF_ENDPOINT_URL</code> in <code className="bg-blue-100 px-1 rounded font-mono">backend/.env</code>.
+                  </span>
+                </div>
+              </div>
+            ) : response.errors && response.errors.some((e) => e.includes('402') || e.includes('credits depleted') || e.includes('Payment Required')) ? (
               <div className="bg-amber-50/90 border border-amber-300 rounded-lg p-2.5 text-2xs text-amber-900 flex items-start gap-2">
                 <AlertCircle className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
                 <div className="space-y-0.5 leading-snug">
                   <span className="font-bold block text-amber-950">
-                    Hugging Face Inference Quota Notice ({response.llmModel || 'zai-org/GLM-5.3'})
+                    Hugging Face Inference Quota Notice ({response.llmModel || 'Hugging Face'})
                   </span>
                   <span className="text-amber-900 block">
-                    Your monthly Hugging Face token credits are currently depleted (HTTP 402). Output is dynamically generated by ORCA's Multi-Agent Telemetry & Spatial Mapping Engine.
-                  </span>
-                  <span className="text-3xs text-amber-800 block">
-                    To re-enable live GLM-5.3 API calls, top up credits on Hugging Face or set a free <code className="bg-amber-100 px-1 rounded font-mono">OPENROUTER_API_KEY</code> / <code className="bg-amber-100 px-1 rounded font-mono">GEMINI_API_KEY</code> in <code className="bg-amber-100 px-1 rounded font-mono">backend/.env</code>.
+                    Your monthly Hugging Face token credits are currently depleted (HTTP 402). Output is dynamically generated by ORCA's Multi-Agent Telemetry Engine.
                   </span>
                 </div>
               </div>
-            )}
+            ) : null}
 
             <div className="text-xs sm:text-sm text-navy-950 font-medium leading-relaxed">
               {isTranslating ? (
