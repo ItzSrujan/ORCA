@@ -149,8 +149,8 @@ def main():
         states_data.append(state_obj)
         print(f"Loaded {item['name']}: {len(coast_list)} coasts")
 
-    # Output to frontend src/data/incois_pfz.json
-    fe_target = root / 'src' / 'data' / 'incois_pfz.json'
+    # Output to frontend/src/data/incois_pfz.json
+    fe_target = root / 'frontend' / 'src' / 'data' / 'incois_pfz.json'
     fe_target.parent.mkdir(parents=True, exist_ok=True)
     with open(fe_target, 'w', encoding='utf-8') as f:
         json.dump({'states': states_data, 'coasts': all_coasts}, f, indent=2, ensure_ascii=False)
