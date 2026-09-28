@@ -4,6 +4,7 @@ import {
   Send,
   Loader2,
   RotateCcw,
+  X,
 } from 'lucide-react';
 import { apiService } from '../services/api';
 import type { LocationAssessment, AskOrcaResponse } from '../types';
@@ -128,7 +129,7 @@ export const RecommendationCard: React.FC<RecommendationCardProps> = ({
 
     setIsLoading(true);
     setActivePrompt(q);
-    setQuery('');
+    setQuery(q);
 
     const doQuery = async (lat?: number, lon?: number, locName?: string) => {
       try {
@@ -367,20 +368,33 @@ export const RecommendationCard: React.FC<RecommendationCardProps> = ({
           }}
           className="flex gap-2"
         >
-          <input
-            type="text"
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            placeholder={t('ask.placeholder')}
-            className="flex-1 px-3 py-2 rounded-lg border border-slate-700/80 bg-[#060B14] text-slate-100 placeholder:text-slate-500 focus:outline-none focus:border-sky-500 text-xs sm:text-sm min-w-0"
-          />
+          <div className="relative flex-1 min-w-0">
+            <input
+              type="text"
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              placeholder={t('ask.placeholder')}
+              className="w-full pl-3.5 pr-8 py-2.5 rounded-lg border border-slate-700/80 bg-[#060B14] text-slate-100 placeholder:text-slate-500 focus:outline-none focus:border-sky-500 focus:ring-1 focus:ring-sky-500/30 text-xs sm:text-sm transition-colors"
+            />
+            {query && (
+              <button
+                type="button"
+                onClick={() => setQuery('')}
+                className="absolute right-2.5 top-1/2 -translate-y-1/2 p-0.5 text-slate-400 hover:text-white transition-colors cursor-pointer"
+                title="Clear input"
+                aria-label="Clear input"
+              >
+                <X className="w-3.5 h-3.5" />
+              </button>
+            )}
+          </div>
           <button
             type="submit"
             disabled={isLoading || !query.trim()}
-            className="px-4 py-2 rounded-lg bg-sky-600 hover:bg-sky-500 disabled:opacity-50 text-white text-xs sm:text-sm font-medium flex items-center gap-1.5 transition-colors shrink-0 cursor-pointer"
+            className="px-4 py-2.5 rounded-lg bg-sky-600 hover:bg-sky-500 disabled:opacity-40 text-white text-xs sm:text-sm font-medium flex items-center gap-1.5 transition-colors shrink-0 cursor-pointer shadow-xs"
           >
             {isLoading ? (
-              <Loader2 className="w-3.5 h-3.5 animate-spin" />
+              <Loader2 className="w-4 h-4 animate-spin" />
             ) : (
               <>
                 <Send className="w-3.5 h-3.5" />
@@ -392,21 +406,31 @@ export const RecommendationCard: React.FC<RecommendationCardProps> = ({
 
         {/* Operational Query Chips */}
         <div>
-          <span className="text-2xs font-mono uppercase tracking-wider text-slate-500 block mb-1.5">
+          <span className="text-2xs font-mono uppercase tracking-wider text-slate-400 block mb-1.5 font-medium">
             {t('ask.examplesTitle')}:
           </span>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5">
-            {examples.map((ex, idx) => (
-              <button
-                key={idx}
-                type="button"
-                onClick={() => handleAsk(ex)}
-                className="text-2xs text-slate-300 bg-[#060B14] hover:bg-[#0E1726] border border-slate-800/90 rounded p-2 text-left transition-colors flex items-baseline gap-1.5 cursor-pointer font-sans"
-              >
-                <span className="text-sky-400 font-mono text-xs select-none">›</span>
-                <span className="line-clamp-1">{ex}</span>
-              </button>
-            ))}
+            {examples.map((ex, idx) => {
+              const isSelected = query.trim() === ex.trim();
+              return (
+                <button
+                  key={idx}
+                  type="button"
+                  onClick={() => {
+                    setQuery(ex);
+                    handleAsk(ex);
+                  }}
+                  className={`text-2xs sm:text-xs rounded-md px-3 py-2 text-left transition-all flex items-baseline gap-2 cursor-pointer font-sans ${
+                    isSelected
+                      ? 'bg-sky-950/70 border border-sky-600/60 text-sky-200'
+                      : 'text-slate-300 bg-[#070D18] hover:bg-[#0E1726] border border-slate-800/90 hover:border-slate-700/80 hover:text-white'
+                  }`}
+                >
+                  <span className="text-sky-400 font-mono text-xs select-none shrink-0">›</span>
+                  <span className="line-clamp-1">{ex}</span>
+                </button>
+              );
+            })}
           </div>
         </div>
       </div>

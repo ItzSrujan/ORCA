@@ -8,6 +8,7 @@ import { SimpleMap } from './components/SimpleMap';
 import { LocationComparisonModal } from './components/LocationComparisonModal';
 import { LocationSearchModal } from './components/LocationSearchModal';
 import { apiService, POPULAR_COASTAL_PORTS } from './services/api';
+import { INCOIS_PFZ_STATES } from './data/incoisPfz';
 import type { LocationAssessment, LocationComparisonData, CoastalPort } from './types';
 
 // Initial placeholder state while live telemetry connects
@@ -67,6 +68,7 @@ export default function App() {
   const [isComparisonOpen, setIsComparisonOpen] = useState<boolean>(false);
   const [isLiveLocation, setIsLiveLocation] = useState<boolean>(false);
   const [selectedPortId, setSelectedPortId] = useState<string>('kochi');
+  const [selectedStateId, setSelectedStateId] = useState<string>('');
   const [activeView, setActiveView] = useState<ViewMode>(isDesktop ? 'cockpit' : 'all');
 
   const currentLang = i18n.resolvedLanguage || i18n.language || 'en';
@@ -185,10 +187,29 @@ export default function App() {
     );
   };
 
-  // Select port from modal or quick top bar strip
+  // Select state from top bar dropdown or modal
+  const handleSelectState = (stateId: string) => {
+    setSelectedStateId(stateId);
+    const stateObj = INCOIS_PFZ_STATES.find((s) => s.id === stateId);
+    if (stateObj?.defaultPort) {
+      handleSelectPort(stateObj.defaultPort);
+    }
+  };
+
+  // Select port from modal or quick top bar
   const handleSelectPort = (port: CoastalPort) => {
     setIsLiveLocation(false);
     setSelectedPortId(port.id);
+    if (port.stateId) {
+      setSelectedStateId(port.stateId);
+    } else {
+      const matchedState = INCOIS_PFZ_STATES.find(
+        (s) =>
+          port.state.toLowerCase().includes(s.displayName.toLowerCase()) ||
+          port.state.toLowerCase().includes(s.name.toLowerCase())
+      );
+      if (matchedState) setSelectedStateId(matchedState.id);
+    }
     loadLocationData(port.lat, port.lon, `${port.name}, ${port.state}`, false);
   };
 
@@ -208,6 +229,8 @@ export default function App() {
         ports={POPULAR_COASTAL_PORTS}
         selectedPortId={selectedPortId}
         onSelectPort={handleSelectPort}
+        selectedStateId={selectedStateId}
+        onSelectState={handleSelectState}
         onRequestGeolocation={requestGeolocation}
         onRefresh={handleRefresh}
         isRefreshing={isRefreshing}
@@ -215,16 +238,16 @@ export default function App() {
       />
 
       {/* 2. DYNAMIC WORKSPACE VIEW SWITCHER */}
-      <nav aria-label="Dashboard Views" className="bg-[#070D18]/95 backdrop-blur-md border-b border-slate-800/80 px-3 sm:px-5 lg:px-8 py-2 sticky top-[57px] z-20">
+      <nav aria-label="Dashboard Views" className="bg-[#070D18]/90 backdrop-blur-md border-b border-slate-800/80 px-3 sm:px-5 lg:px-8 py-2 sticky top-[53px] z-20">
         <div className="w-full flex items-center justify-between gap-3 overflow-x-auto no-scrollbar">
           {/* View Modes Switcher */}
           <div className="flex items-center gap-1 bg-[#050912] p-1 rounded-lg border border-slate-800/90 shrink-0 font-mono text-xs sm:text-sm">
             <button
               onClick={() => setActiveView('cockpit')}
-              className={`px-3 py-1.5 rounded transition-colors cursor-pointer ${
+              className={`px-3 py-1.5 rounded-md transition-all cursor-pointer font-medium ${
                 activeView === 'cockpit'
-                  ? 'bg-slate-800 text-white font-semibold'
-                  : 'text-slate-400 hover:text-slate-200'
+                  ? 'bg-sky-600 text-white font-semibold shadow-xs'
+                  : 'text-slate-400 hover:text-slate-200 hover:bg-[#0B1320]'
               }`}
             >
               {t('nav.tacticalCockpit', 'Tactical Cockpit')}
@@ -232,10 +255,10 @@ export default function App() {
 
             <button
               onClick={() => setActiveView('chat')}
-              className={`px-3 py-1.5 rounded transition-colors cursor-pointer ${
+              className={`px-3 py-1.5 rounded-md transition-all cursor-pointer font-medium ${
                 activeView === 'chat'
-                  ? 'bg-slate-800 text-white font-semibold'
-                  : 'text-slate-400 hover:text-slate-200'
+                  ? 'bg-sky-600 text-white font-semibold shadow-xs'
+                  : 'text-slate-400 hover:text-slate-200 hover:bg-[#0B1320]'
               }`}
             >
               {t('nav.advisoryConsole', 'Ask ORCA')}
@@ -243,10 +266,10 @@ export default function App() {
 
             <button
               onClick={() => setActiveView('conditions')}
-              className={`px-3 py-1.5 rounded transition-colors cursor-pointer ${
+              className={`px-3 py-1.5 rounded-md transition-all cursor-pointer font-medium ${
                 activeView === 'conditions'
-                  ? 'bg-slate-800 text-white font-semibold'
-                  : 'text-slate-400 hover:text-slate-200'
+                  ? 'bg-sky-600 text-white font-semibold shadow-xs'
+                  : 'text-slate-400 hover:text-slate-200 hover:bg-[#0B1320]'
               }`}
             >
               {t('nav.telemetryMatrix', 'Telemetry Matrix')}
@@ -254,10 +277,10 @@ export default function App() {
 
             <button
               onClick={() => setActiveView('map')}
-              className={`px-3 py-1.5 rounded transition-colors cursor-pointer ${
+              className={`px-3 py-1.5 rounded-md transition-all cursor-pointer font-medium ${
                 activeView === 'map'
-                  ? 'bg-slate-800 text-white font-semibold'
-                  : 'text-slate-400 hover:text-slate-200'
+                  ? 'bg-sky-600 text-white font-semibold shadow-xs'
+                  : 'text-slate-400 hover:text-slate-200 hover:bg-[#0B1320]'
               }`}
             >
               {t('nav.nauticalMap', 'Satellite Chart')}
@@ -265,10 +288,10 @@ export default function App() {
 
             <button
               onClick={() => setActiveView('all')}
-              className={`px-2.5 py-1.5 rounded transition-colors cursor-pointer sm:hidden ${
+              className={`px-2.5 py-1.5 rounded-md transition-all cursor-pointer sm:hidden font-medium ${
                 activeView === 'all'
-                  ? 'bg-slate-800 text-white font-semibold'
-                  : 'text-slate-400 hover:text-slate-200'
+                  ? 'bg-sky-600 text-white font-semibold shadow-xs'
+                  : 'text-slate-400 hover:text-slate-200 hover:bg-[#0B1320]'
               }`}
             >
               {t('nav.allView', 'All')}
@@ -277,11 +300,11 @@ export default function App() {
 
           {/* Right Status Readout */}
           <div className="hidden md:flex items-center gap-2 text-xs font-mono text-slate-400">
-            <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 shrink-0" />
+            <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 shrink-0 animate-pulse" />
             <span className="text-slate-300">TELEMETRY:</span>
-            <span className="text-emerald-400">ACTIVE</span>
+            <span className="text-emerald-400 font-semibold">ONLINE</span>
             <span className="text-slate-600">|</span>
-            <span>INCOIS PFZ</span>
+            <span className="text-sky-400">INCOIS PFZ</span>
           </div>
         </div>
       </nav>
@@ -397,6 +420,7 @@ export default function App() {
         onClose={() => setIsSearchOpen(false)}
         onSelectPort={handleSelectPort}
         onRequestGeolocation={requestGeolocation}
+        initialStateId={selectedStateId}
       />
 
       {comparisonData?.suggested_location && (

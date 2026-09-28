@@ -4,6 +4,7 @@ import { Search, RotateCw } from 'lucide-react';
 import type { LocationAssessment } from '../types';
 import {
   translateLocationName,
+  translateStateName,
   translateTideStatus,
   translateUnit,
 } from '../utils/locationTranslations';
@@ -35,13 +36,13 @@ export const LocationSection: React.FC<LocationSectionProps> = ({
       case 'SAFE':
         return {
           label: t('risk.safe', 'SAFE TO PROCEED'),
-          badgeClass: 'bg-emerald-950/80 border-emerald-500/60 text-emerald-300',
+          badgeClass: 'bg-emerald-950/70 border-emerald-500/50 text-emerald-300',
           dotClass: 'bg-emerald-400',
         };
       case 'HIGH_RISK':
         return {
           label: t('risk.highRisk', 'HIGH RISK — AVOID SEA'),
-          badgeClass: 'bg-rose-950/80 border-rose-500/60 text-rose-300',
+          badgeClass: 'bg-rose-950/70 border-rose-500/50 text-rose-300',
           dotClass: 'bg-rose-400',
         };
       case 'INSUFFICIENT_DATA':
@@ -54,7 +55,7 @@ export const LocationSection: React.FC<LocationSectionProps> = ({
       default:
         return {
           label: t('risk.caution', 'PROCEED WITH CAUTION'),
-          badgeClass: 'bg-amber-950/80 border-amber-500/60 text-amber-300',
+          badgeClass: 'bg-amber-950/70 border-amber-500/50 text-amber-300',
           dotClass: 'bg-amber-400',
         };
     }
@@ -67,8 +68,12 @@ export const LocationSection: React.FC<LocationSectionProps> = ({
       ? t('location.justNow', 'Just now')
       : assessment.lastUpdated;
 
-  // Translated location names & telemetry
-  const displayLocationName = translateLocationName(assessment.name, currentLang);
+  // Separate Harbor and State if formatted as "Harbor, State"
+  const nameParts = assessment.name.split(',');
+  const rawHarbor = nameParts[0]?.trim() || assessment.name;
+  const rawState = nameParts[1]?.trim() || '';
+  const displayHarbor = translateLocationName(rawHarbor, currentLang);
+  const displayState = rawState ? translateStateName(rawState, currentLang) : '';
 
   const rawSafestPort = assessment.conditions.safestPortName
     ? assessment.conditions.safestPortName.split('(')[0].trim()
@@ -83,20 +88,20 @@ export const LocationSection: React.FC<LocationSectionProps> = ({
     <div className="space-y-3">
       {/* Geolocation Notice if permission was denied */}
       {permissionDenied && (
-        <div className="bg-amber-950/50 border border-amber-700/60 rounded-lg p-3 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-xs sm:text-sm">
+        <div className="bg-amber-950/40 border border-amber-700/60 rounded-lg p-3 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-xs sm:text-sm">
           <p className="text-amber-200 leading-snug">
             {t('location.permissionPrompt')}
           </p>
           <div className="flex items-center gap-2 w-full sm:w-auto shrink-0">
             <button
               onClick={onAllowLocation}
-              className="flex-1 sm:flex-initial text-xs sm:text-sm font-semibold px-3.5 py-1.5 rounded bg-amber-600 hover:bg-amber-500 text-white transition-colors cursor-pointer"
+              className="flex-1 sm:flex-initial text-xs sm:text-sm font-semibold px-3 py-1.5 rounded-md bg-amber-600 hover:bg-amber-500 text-white transition-colors cursor-pointer"
             >
               {t('location.allowAccess')}
             </button>
             <button
               onClick={onOpenSearch}
-              className="flex-1 sm:flex-initial text-xs sm:text-sm font-semibold px-3.5 py-1.5 rounded bg-[#0A101C] border border-amber-600/60 text-amber-200 hover:bg-[#121E33] transition-colors cursor-pointer"
+              className="flex-1 sm:flex-initial text-xs sm:text-sm font-semibold px-3 py-1.5 rounded-md bg-[#0A101C] border border-amber-600/60 text-amber-200 hover:bg-[#121E33] transition-colors cursor-pointer"
             >
               {t('location.searchLocation')}
             </button>
@@ -105,16 +110,26 @@ export const LocationSection: React.FC<LocationSectionProps> = ({
       )}
 
       {/* Main Operations Command Hero Card */}
-      <div className="bg-[#0A111E] rounded-xl p-4 sm:p-5 border border-slate-800 transition-colors">
+      <div className="bg-[#0A111E] rounded-xl p-4 sm:p-5 border border-slate-800/90 transition-colors shadow-xs">
         <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
           {/* Left: Location Identity & Coordinates */}
           <div className="min-w-0">
             <div className="flex items-center gap-2.5 flex-wrap">
               <h1 className="text-2xl sm:text-3xl font-extrabold text-white tracking-tight leading-tight truncate">
-                {displayLocationName}
+                {displayHarbor}
               </h1>
+              {displayState && (
+                <button
+                  type="button"
+                  onClick={onOpenSearch}
+                  className="inline-flex items-center text-xs font-mono font-medium px-2.5 py-1 rounded-md bg-[#070D18] hover:bg-[#111C2E] border border-slate-700/80 text-sky-300 hover:text-white transition-colors cursor-pointer"
+                  title={`State: ${displayState} (Click to switch state)`}
+                >
+                  {displayState}
+                </button>
+              )}
               {isLiveLocation && (
-                <span className="inline-flex items-center gap-1.5 text-xs font-mono uppercase tracking-wider px-2.5 py-0.5 rounded bg-emerald-950 border border-emerald-600/70 text-emerald-300 font-semibold">
+                <span className="inline-flex items-center gap-1.5 text-xs font-mono uppercase tracking-wider px-2.5 py-0.5 rounded-md bg-emerald-950/80 border border-emerald-600/70 text-emerald-300 font-semibold">
                   <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
                   {t('location.liveGps', 'LIVE GPS')}
                 </span>
@@ -232,4 +247,3 @@ export const LocationSection: React.FC<LocationSectionProps> = ({
     </div>
   );
 };
-

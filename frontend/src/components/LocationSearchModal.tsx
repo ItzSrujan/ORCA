@@ -1,6 +1,6 @@
-import React, { useState, useMemo, useRef } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
-import { X, Search, Navigation, Loader2, ChevronLeft, ChevronRight } from 'lucide-react';
+import { X, Search, Navigation, Loader2, Anchor } from 'lucide-react';
 import { INCOIS_PFZ_STATES, ALL_PFZ_COASTS } from '../data/incoisPfz';
 import type { CoastalPort } from '../types';
 import { translateLocationName, translateStateName } from '../utils/locationTranslations';
@@ -10,6 +10,7 @@ interface LocationSearchModalProps {
   onClose: () => void;
   onSelectPort: (port: CoastalPort) => void;
   onRequestGeolocation: () => void;
+  initialStateId?: string;
 }
 
 export const LocationSearchModal: React.FC<LocationSearchModalProps> = ({
@@ -17,21 +18,26 @@ export const LocationSearchModal: React.FC<LocationSearchModalProps> = ({
   onClose,
   onSelectPort,
   onRequestGeolocation,
+  initialStateId = 'all',
 }) => {
   const { t, i18n } = useTranslation();
   const currentLang = i18n.resolvedLanguage || i18n.language || 'en';
   const [searchTerm, setSearchTerm] = useState('');
-  const [selectedStateId, setSelectedStateId] = useState<string>('all');
+  const [selectedStateId, setSelectedStateId] = useState<string>(initialStateId);
   const [isSearching, setIsSearching] = useState(false);
   const [searchError, setSearchError] = useState<string | null>(null);
-  const stateTabsRef = useRef<HTMLDivElement>(null);
 
-  const scrollStateTabs = (direction: 'left' | 'right') => {
-    if (stateTabsRef.current) {
-      const scrollAmount = direction === 'left' ? -220 : 220;
-      stateTabsRef.current.scrollBy({ left: scrollAmount, behavior: 'smooth' });
+  // Sync state if initial state changes on open
+  useEffect(() => {
+    if (isOpen && initialStateId) {
+      setSelectedStateId(initialStateId);
     }
-  };
+  }, [isOpen, initialStateId]);
+
+  const activeStateObj = useMemo(() => {
+    if (selectedStateId === 'all') return null;
+    return INCOIS_PFZ_STATES.find((s) => s.id === selectedStateId) || null;
+  }, [selectedStateId]);
 
   const filteredCoasts = useMemo(() => {
     let list = ALL_PFZ_COASTS;
@@ -112,10 +118,10 @@ export const LocationSearchModal: React.FC<LocationSearchModalProps> = ({
           return;
         }
       }
-      setSearchError(`No location found for "${query}". Try coast name or state.`);
+      setSearchError(`No location found for "${query}". Try port name or coastal state.`);
     } catch (err) {
       console.warn('Geocoding error:', err);
-      setSearchError('Search failed. Please enter coordinates or select a coast below.');
+      setSearchError('Search failed. Please enter coordinates or select a port below.');
     } finally {
       setIsSearching(false);
     }
@@ -129,14 +135,14 @@ export const LocationSearchModal: React.FC<LocationSearchModalProps> = ({
       onClick={onClose}
     >
       <div
-        className="bg-[#0B1322] w-full max-w-2xl rounded-xl shadow-2xl border border-slate-700/80 max-h-[88vh] flex flex-col my-auto text-left text-slate-100"
+        className="bg-[#0B1322] w-full max-w-2xl rounded-xl shadow-2xl border border-slate-800 max-h-[90vh] flex flex-col my-auto text-left text-slate-100 transition-colors"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
         <div className="p-4 sm:p-5 border-b border-slate-800 flex items-center justify-between shrink-0 bg-[#070D18] rounded-t-xl">
           <div>
             <h2 className="text-base sm:text-lg font-bold text-white tracking-tight">
-              {t('location.chooseLocation', 'Select Coastal Harbor')}
+              {t('location.chooseLocation', 'Select Coastal Harbor & State')}
             </h2>
             <p className="text-2xs font-mono text-slate-400 mt-0.5">
               INCOIS Potential Fishing Zones (PFZ) Coastal Directory
@@ -144,7 +150,7 @@ export const LocationSearchModal: React.FC<LocationSearchModalProps> = ({
           </div>
           <button
             onClick={onClose}
-            className="p-1.5 text-slate-400 hover:text-white hover:bg-slate-800 rounded-md transition-colors cursor-pointer"
+            className="p-1.5 text-slate-400 hover:text-white hover:bg-slate-800 rounded-lg transition-colors cursor-pointer"
             aria-label={t('location.close')}
           >
             <X className="w-5 h-5" />
@@ -153,128 +159,165 @@ export const LocationSearchModal: React.FC<LocationSearchModalProps> = ({
 
         {/* Content */}
         <div className="p-4 sm:p-5 overflow-y-auto space-y-4 text-xs font-sans">
-          {/* GPS Quick Action */}
+          {/* Quick GPS Action */}
           <button
             type="button"
             onClick={() => {
               onRequestGeolocation();
               onClose();
             }}
-            className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg bg-sky-600 hover:bg-sky-500 text-white font-medium text-xs sm:text-sm transition-colors cursor-pointer"
+            className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg bg-[#0E1726] hover:bg-[#142238] border border-slate-700/80 text-sky-300 hover:text-white font-medium text-xs sm:text-sm transition-colors cursor-pointer"
           >
-            <Navigation className="w-4 h-4" />
-            <span>Use Current GPS Location</span>
+            <Navigation className="w-4 h-4 text-sky-400" />
+            <span>Use Current GPS Coordinates</span>
           </button>
 
-          {/* Search Input Bar */}
-          <div className="space-y-1.5">
-            <form onSubmit={handleCustomSearch} className="relative">
-              {isSearching ? (
-                <Loader2 className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-sky-400 animate-spin" />
-              ) : (
-                <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-500" />
-              )}
-              <input
-                type="text"
-                value={searchTerm}
-                onChange={(e) => {
-                  setSearchTerm(e.target.value);
-                  if (searchError) setSearchError(null);
-                }}
-                placeholder="Search coast, port, coordinates (e.g. Karwar, Digha, 18.91, 72.82)..."
-                className="w-full pl-9 pr-14 py-2 rounded-lg border border-slate-700/80 focus:border-sky-500 text-xs sm:text-sm text-slate-100 bg-[#060B14] placeholder:text-slate-500 focus:outline-none font-sans"
-              />
-              {searchTerm && (
-                <button
-                  type="submit"
-                  disabled={isSearching}
-                  className="absolute right-1.5 top-1/2 -translate-y-1/2 px-2.5 py-1 rounded bg-sky-600 hover:bg-sky-500 text-white text-xs font-medium disabled:opacity-50 transition-colors cursor-pointer"
+          {/* State Dropdown & Quick Search Controls */}
+          <div className="grid grid-cols-1 sm:grid-cols-12 gap-2.5">
+            {/* Dedicated State Selector Dropdown */}
+            <div className="sm:col-span-5 space-y-1">
+              <label htmlFor="modal-state-select" className="text-2xs font-mono uppercase tracking-wider text-slate-400 block font-semibold">
+                Select State:
+              </label>
+              <div className="relative">
+                <select
+                  id="modal-state-select"
+                  value={selectedStateId}
+                  onChange={(e) => setSelectedStateId(e.target.value)}
+                  className="w-full px-3 py-2 rounded-lg border border-slate-700/80 bg-[#060B14] text-slate-100 text-xs sm:text-sm focus:outline-none focus:border-sky-500 cursor-pointer font-sans"
                 >
-                  {isSearching ? '...' : 'Go'}
-                </button>
-              )}
-            </form>
-            {searchError && (
-              <p className="text-2xs text-rose-400 font-mono px-1">{searchError}</p>
-            )}
+                  <option value="all">
+                    {currentLang === 'mr' ? 'सर्व राज्ये' : currentLang === 'hi' ? 'सभी राज्य' : 'All Coastal States'} ({ALL_PFZ_COASTS.length})
+                  </option>
+                  {INCOIS_PFZ_STATES.map((st) => (
+                    <option key={st.id} value={st.id}>
+                      {translateStateName(st.displayName, currentLang)} ({st.coastCount})
+                    </option>
+                  ))}
+                </select>
+              </div>
+            </div>
+
+            {/* Keyword / Port Search Box */}
+            <div className="sm:col-span-7 space-y-1">
+              <label className="text-2xs font-mono uppercase tracking-wider text-slate-400 block font-semibold">
+                Search Harbor or Port:
+              </label>
+              <form onSubmit={handleCustomSearch} className="relative">
+                {isSearching ? (
+                  <Loader2 className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-sky-400 animate-spin" />
+                ) : (
+                  <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-500" />
+                )}
+                <input
+                  type="text"
+                  value={searchTerm}
+                  onChange={(e) => {
+                    setSearchTerm(e.target.value);
+                    if (searchError) setSearchError(null);
+                  }}
+                  placeholder="e.g. Karwar, Digha, Malim..."
+                  className="w-full pl-9 pr-14 py-2 rounded-lg border border-slate-700/80 focus:border-sky-500 text-xs sm:text-sm text-slate-100 bg-[#060B14] placeholder:text-slate-500 focus:outline-none font-sans"
+                />
+                {searchTerm && (
+                  <button
+                    type="button"
+                    onClick={() => setSearchTerm('')}
+                    className="absolute right-8 top-1/2 -translate-y-1/2 p-1 text-slate-400 hover:text-white"
+                  >
+                    <X className="w-3.5 h-3.5" />
+                  </button>
+                )}
+                {searchTerm && (
+                  <button
+                    type="submit"
+                    disabled={isSearching}
+                    className="absolute right-1.5 top-1/2 -translate-y-1/2 px-2 py-0.5 rounded bg-sky-600 hover:bg-sky-500 text-white text-xs font-medium disabled:opacity-50 transition-colors cursor-pointer"
+                  >
+                    Go
+                  </button>
+                )}
+              </form>
+            </div>
           </div>
 
-          {/* State Filter Tabs */}
-          <div>
-            <span className="text-xs font-mono uppercase tracking-wider text-slate-400 block mb-2 font-semibold">
-              Filter by State ({INCOIS_PFZ_STATES.length}):
-            </span>
+          {searchError && (
+            <p className="text-2xs text-rose-400 font-mono px-1">{searchError}</p>
+          )}
 
-            <div className="relative flex items-center gap-1.5">
-              <button
-                type="button"
-                onClick={() => scrollStateTabs('left')}
-                className="p-1.5 rounded bg-[#060B14] hover:bg-[#121E33] text-slate-400 hover:text-white transition-colors shrink-0 border border-slate-800 cursor-pointer"
-                aria-label="Slide left"
-              >
-                <ChevronLeft className="w-4 h-4" />
-              </button>
-
-              <div
-                ref={stateTabsRef}
-                className="flex items-center gap-2 overflow-x-auto pb-1 no-scrollbar scroll-smooth flex-1 min-w-0"
-              >
-                <button
-                  type="button"
-                  onClick={() => setSelectedStateId('all')}
-                  className={`px-3 py-1.5 rounded-md text-xs sm:text-sm font-mono font-medium whitespace-nowrap transition-colors cursor-pointer ${
-                    selectedStateId === 'all'
-                      ? 'bg-sky-600 text-white font-semibold shadow-xs'
-                      : 'bg-[#060B14] hover:bg-[#121E33] text-slate-400 hover:text-white border border-slate-800'
-                  }`}
-                >
-                  {currentLang === 'mr' ? 'सर्व' : currentLang === 'hi' ? 'सभी' : 'All'} ({ALL_PFZ_COASTS.length})
-                </button>
-
-                {INCOIS_PFZ_STATES.map((st) => {
-                  const translatedSt = translateStateName(st.displayName, currentLang);
-                  return (
-                    <button
-                      key={st.id}
-                      type="button"
-                      onClick={() => setSelectedStateId(st.id)}
-                      className={`px-3 py-1.5 rounded-md text-xs sm:text-sm font-mono font-medium whitespace-nowrap transition-colors cursor-pointer ${
-                        selectedStateId === st.id
-                          ? 'bg-sky-600 text-white font-semibold shadow-xs'
-                          : 'bg-[#060B14] hover:bg-[#121E33] text-slate-400 hover:text-white border border-slate-800'
-                      }`}
-                    >
-                      {translatedSt} ({st.coastCount})
-                    </button>
-                  );
-                })}
+          {/* Quick 1-Click State Primary Harbor Action */}
+          {activeStateObj && (
+            <div className="p-3 rounded-lg bg-[#070D18] border border-sky-900/60 flex items-center justify-between gap-3">
+              <div className="min-w-0">
+                <span className="text-3xs font-mono uppercase tracking-widest text-sky-400 block font-semibold">
+                  Primary State Harbor
+                </span>
+                <span className="text-xs sm:text-sm font-semibold text-white truncate block">
+                  {translateLocationName(activeStateObj.defaultPort.name, currentLang)} ({translateStateName(activeStateObj.displayName, currentLang)})
+                </span>
               </div>
-
               <button
                 type="button"
-                onClick={() => scrollStateTabs('right')}
-                className="p-1.5 rounded bg-[#060B14] hover:bg-[#121E33] text-slate-400 hover:text-white transition-colors shrink-0 border border-slate-800 cursor-pointer"
-                aria-label="Slide right"
+                onClick={() => {
+                  onSelectPort(activeStateObj.defaultPort);
+                  onClose();
+                }}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-md bg-sky-600 hover:bg-sky-500 text-white text-xs font-semibold shrink-0 transition-colors cursor-pointer shadow-xs"
               >
-                <ChevronRight className="w-4 h-4" />
+                <Anchor className="w-3.5 h-3.5" />
+                <span>Select State</span>
               </button>
+            </div>
+          )}
+
+          {/* Minimalist State Filter Pills */}
+          <div>
+            <div className="flex items-center gap-1.5 overflow-x-auto pb-1 no-scrollbar flex-wrap">
+              <button
+                type="button"
+                onClick={() => setSelectedStateId('all')}
+                className={`px-2.5 py-1 rounded-md text-xs font-mono transition-colors cursor-pointer ${
+                  selectedStateId === 'all'
+                    ? 'bg-sky-600 text-white font-semibold shadow-xs'
+                    : 'bg-[#060B14] hover:bg-[#121E33] text-slate-400 hover:text-white border border-slate-800'
+                }`}
+              >
+                {currentLang === 'mr' ? 'सर्व' : currentLang === 'hi' ? 'सभी' : 'All'}
+              </button>
+              {INCOIS_PFZ_STATES.map((st) => {
+                const isSelected = selectedStateId === st.id;
+                return (
+                  <button
+                    key={st.id}
+                    type="button"
+                    onClick={() => setSelectedStateId(st.id)}
+                    className={`px-2.5 py-1 rounded-md text-xs font-mono transition-colors cursor-pointer ${
+                      isSelected
+                        ? 'bg-sky-600 text-white font-semibold shadow-xs'
+                        : 'bg-[#060B14] hover:bg-[#121E33] text-slate-400 hover:text-white border border-slate-800'
+                    }`}
+                  >
+                    {translateStateName(st.displayName, currentLang)}
+                  </button>
+                );
+              })}
             </div>
           </div>
 
           {/* Coasts Grid */}
           <div>
-            <div className="flex items-center justify-between mb-2.5">
+            <div className="flex items-center justify-between mb-2">
               <span className="text-xs font-mono uppercase tracking-wider text-slate-400 font-semibold">
                 Landing Centers & Ports ({filteredCoasts.length})
               </span>
               {selectedStateId !== 'all' && (
                 <span className="text-xs font-mono font-medium text-sky-400">
-                  {translateStateName(INCOIS_PFZ_STATES.find((s) => s.id === selectedStateId)?.displayName || '', currentLang)}
+                  {translateStateName(activeStateObj?.displayName || '', currentLang)}
                 </span>
               )}
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 max-h-[380px] overflow-y-auto pr-1">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 max-h-[340px] overflow-y-auto pr-1">
               {filteredCoasts.slice(0, 150).map((coast) => {
                 const translatedCoastName = translateLocationName(coast.name, currentLang);
                 const translatedCoastState = translateStateName(coast.state, currentLang);
@@ -285,13 +328,13 @@ export const LocationSearchModal: React.FC<LocationSearchModalProps> = ({
                       onSelectPort(coast);
                       onClose();
                     }}
-                    className="w-full flex items-center justify-between p-3 rounded-lg bg-[#060B14] hover:bg-[#0E1726] border border-slate-800 hover:border-slate-700 text-left transition-colors cursor-pointer group"
+                    className="w-full flex items-center justify-between p-2.5 sm:p-3 rounded-lg bg-[#060B14] hover:bg-[#0E1726] border border-slate-800/90 hover:border-slate-700 text-left transition-colors cursor-pointer group"
                   >
                     <div className="min-w-0 pr-2">
-                      <div className="text-sm sm:text-base font-semibold text-slate-100 group-hover:text-sky-300 truncate">
+                      <div className="text-xs sm:text-sm font-semibold text-slate-100 group-hover:text-sky-300 truncate">
                         {translatedCoastName}
                       </div>
-                      <div className="text-xs text-slate-400 truncate flex items-center gap-1.5 mt-1 font-mono">
+                      <div className="text-2xs text-slate-400 truncate flex items-center gap-1.5 mt-0.5 font-mono">
                         <span className="text-slate-300">{translatedCoastState}</span>
                         <span>•</span>
                         <span className="text-sky-400">PFZ: {coast.distance} km</span>
@@ -299,10 +342,10 @@ export const LocationSearchModal: React.FC<LocationSearchModalProps> = ({
                     </div>
 
                     <div className="text-right shrink-0">
-                      <div className="text-xs font-mono text-slate-300 bg-[#0B1322] px-2 py-0.5 rounded border border-slate-800">
+                      <div className="text-2xs font-mono text-slate-300 bg-[#0B1322] px-2 py-0.5 rounded border border-slate-800">
                         {coast.direction} ({coast.bearing}°)
                       </div>
-                      <div className="text-xs text-slate-500 font-mono mt-1">
+                      <div className="text-3xs text-slate-500 font-mono mt-0.5">
                         {coast.depth}m depth
                       </div>
                     </div>
@@ -318,7 +361,7 @@ export const LocationSearchModal: React.FC<LocationSearchModalProps> = ({
             </div>
 
             {filteredCoasts.length > 150 && (
-              <p className="text-xs font-mono text-slate-500 text-center mt-2">
+              <p className="text-2xs font-mono text-slate-500 text-center mt-2">
                 Showing top 150 records. Type in search bar to narrow results.
               </p>
             )}
